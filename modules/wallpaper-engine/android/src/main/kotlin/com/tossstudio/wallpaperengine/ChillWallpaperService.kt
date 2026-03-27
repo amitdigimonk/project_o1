@@ -46,7 +46,7 @@ class ChillBackgroundView(context: Context, appContext: AppContext) : ExpoView(c
     private val waterCrestPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = 3f; color = Color.argb(100, 255, 255, 255) }
 
     init {
-        // CRITICAL: Tells Android this ViewGroup actually draws things natively
+        // CRITICAL: Tells Android this ViewGroup actually draws things
         setWillNotDraw(false) 
     }
 
@@ -107,13 +107,11 @@ class ChillBackgroundView(context: Context, appContext: AppContext) : ExpoView(c
             isInitialized = true
         }
 
-        // ── REACT NATIVE PROP INJECTION (Replaces SharedPreferences) ──
+        // ── Use the Props sent from React Native! ──
         val time: Float = if (isLiveTime) {
             val calendar = Calendar.getInstance()
             calendar.get(Calendar.HOUR_OF_DAY).toFloat() + (calendar.get(Calendar.MINUTE).toFloat() / 60f)
-        } else {
-            manualTime
-        }
+        } else manualTime
 
         val isNight = time < 6f || time > 18f
 
@@ -125,7 +123,6 @@ class ChillBackgroundView(context: Context, appContext: AppContext) : ExpoView(c
         waterPaintShallow.color = if (isNight) Color.parseColor("#1a252f") else Color.parseColor("#75bec3")
         waterPaintDeep.color = if (isNight) Color.parseColor("#0B1026") else Color.parseColor("#1f71d5")
 
-        // 2. Exact Math Mapping
         val landscapeH = h * 0.35f
         val topY = (h * 0.82f) - landscapeH
         val scaleX = w / 100f
@@ -200,6 +197,6 @@ class ChillBackgroundView(context: Context, appContext: AppContext) : ExpoView(c
         }
 
         frameTime += 0.016f
-        invalidate() // CRITICAL: This loops the 60fps Native View
+        invalidate() // CRITICAL: This creates the 60fps render loop!
     }
 }

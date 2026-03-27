@@ -1,3 +1,33 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
   package="com.tossstudio.wallpaperengine">
+  
+  <application>
+    <service
+        android:name=".DinoWallpaperService"
+        android:enabled="true"
+        android:exported="true"
+        android:permission="android.permission.BIND_WALLPAPER">
+        <intent-filter>
+            <action android:name="android.service.wallpaper.WallpaperService" />
+        </intent-filter>
+        <meta-data
+            android:name="android.service.wallpaper"
+            android:resource="@xml/dino_wallpaper" />
+    </service>
+
+<service
+        android:name=".ChillWallpaperService"
+        android:enabled="true"
+        android:exported="true"
+        android:permission="android.permission.BIND_WALLPAPER">
+        <intent-filter>
+            <action android:name="android.service.wallpaper.WallpaperService" />
+        </intent-filter>
+        <meta-data
+            android:name="android.service.wallpaper"
+            android:resource="@xml/dino_wallpaper" />
+    </service>
+
+  </application>
+
 </manifest>

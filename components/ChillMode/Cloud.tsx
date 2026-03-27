@@ -1,7 +1,7 @@
 import React, { memo } from 'react';
 import { ViewStyle } from 'react-native';
-import Svg, { Path, G } from 'react-native-svg';
-import Animated, { useAnimatedStyle, SharedValue } from 'react-native-reanimated';
+import Animated, { SharedValue, useAnimatedStyle } from 'react-native-reanimated';
+import Svg, { G, Path } from 'react-native-svg';
 
 interface CloudProps {
     width?: number;

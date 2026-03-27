@@ -1,12 +1,12 @@
-import React from 'react';
-import { StyleSheet, TouchableOpacity, View } from 'react-native';
-import { Image } from 'expo-image';
-import { useVideoPlayer, VideoView } from 'expo-video';
-import CustomText from './CustomText';
 import { commonStyles } from '@/constants/commonStyles';
-import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/hooks/useTheme';
 import { Category } from '@/types';
+import { Image } from 'expo-image';
+import { useVideoPlayer, VideoView } from 'expo-video';
+import React from 'react';
+import { useTranslation } from 'react-i18next';
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import CustomText from './CustomText';
 
 interface CategoryCardProps {
   category: Category;

@@ -1,7 +1,8 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { NativeModules, Platform, useColorScheme } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Colors } from '@/constants/Colors';
+import { syncChillSettings } from '@/modules/wallpaper-engine/src';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
+import { useColorScheme } from 'react-native';
 
 // --- Types ---
 export type WeatherType = 'clear' | 'partlyCloudy' | 'cloudy' | 'rain' | 'snow' | 'thunder' | 'storm' | 'fog' | 'haze' | 'random';
@@ -68,6 +69,16 @@ export const SettingsProvider = ({ children, isWallpaper }: { children: ReactNod
     const [notificationsEnabled, setNotificationsEnabled] = useState(true);
     const [lockScreenCategories, setLockScreenCategories] = useState<string[]>([]);
     const [eventsEnabled, setEventsEnabled] = useState(true);
+
+
+    useEffect(() => {
+        syncChillSettings({
+            weatherOverride,
+            seasonOverride,
+            liveTime,
+            manualTime
+        });
+    }, [weatherOverride, seasonOverride, liveTime, manualTime]);
 
     // --- Effects for Storage ---
     useEffect(() => {

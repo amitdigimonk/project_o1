@@ -14,9 +14,9 @@ export const androidWallpaperEngine = {
 
     try {
       console.log(`[AndroidWallpaperEngine] Setting wallpaper to: ${imageUrl} at location: ${location}`);
-      
+
       await WallpaperEngine.setWallpaper(imageUrl, location);
-      
+
       return true;
     } catch (error) {
       console.error('[AndroidWallpaperEngine] Failed to set wallpaper:', error);
@@ -27,6 +27,7 @@ export const androidWallpaperEngine = {
   setInteractiveWallpaper: async (serviceName: string = 'DinoWallpaperService'): Promise<boolean> => {
     if (Platform.OS !== 'android') return false;
     try {
+      // MAKE SURE it is passing the variable here, not hardcoded!
       await WallpaperEngine.setInteractiveWallpaper(serviceName);
       return true;
     } catch (error) {
