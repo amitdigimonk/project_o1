@@ -15,8 +15,12 @@ class WallpaperEngineModule : Module() {
   override fun definition() = ModuleDefinition {
     Name("WallpaperEngine")
 
-    AsyncFunction("setWallpaper") { imageUrl: String, location: String ->
-      val context = appContext.reactContext ?: return@AsyncFunction false
+    AsyncFunction("setWallpaper") { imageUrl: String, location: String, promise: expo.modules.kotlin.Promise ->
+      val context = appContext.reactContext
+      if (context == null) {
+        promise.resolve(false)
+        return@AsyncFunction
+      }
       val wallpaperManager = WallpaperManager.getInstance(context)
 
       Thread {
@@ -24,22 +28,26 @@ class WallpaperEngineModule : Module() {
           val url = URL(imageUrl)
           url.openStream().use { inputStream ->
             val bitmap = BitmapFactory.decodeStream(inputStream)
-
-            when (location) {
-              "HOME" -> wallpaperManager.setBitmap(bitmap, null, true, WallpaperManager.FLAG_SYSTEM)
-              "LOCK" -> wallpaperManager.setBitmap(bitmap, null, true, WallpaperManager.FLAG_LOCK)
-              "BOTH" -> {
-                wallpaperManager.setBitmap(bitmap, null, true, WallpaperManager.FLAG_SYSTEM)
-                wallpaperManager.setBitmap(bitmap, null, true, WallpaperManager.FLAG_LOCK)
+            if (bitmap != null) {
+              when (location) {
+                "HOME" -> wallpaperManager.setBitmap(bitmap, null, true, WallpaperManager.FLAG_SYSTEM)
+                "LOCK" -> wallpaperManager.setBitmap(bitmap, null, true, WallpaperManager.FLAG_LOCK)
+                "BOTH" -> {
+                  wallpaperManager.setBitmap(bitmap, null, true, WallpaperManager.FLAG_SYSTEM)
+                  wallpaperManager.setBitmap(bitmap, null, true, WallpaperManager.FLAG_LOCK)
+                }
+                else -> wallpaperManager.setBitmap(bitmap)
               }
-              else -> wallpaperManager.setBitmap(bitmap)
+              promise.resolve(true)
+            } else {
+              promise.resolve(false)
             }
           }
         } catch (e: Exception) {
           e.printStackTrace()
+          promise.resolve(false)
         }
       }.start()
-      true
     }
 
     AsyncFunction("setInteractiveWallpaper") { serviceName: String ->

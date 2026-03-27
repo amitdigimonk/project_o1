@@ -1,6 +1,15 @@
 import { requireNativeModule } from 'expo-modules-core';
 
-const WallpaperEngine = requireNativeModule('WallpaperEngine');
+let WallpaperEngine: any;
+try {
+  WallpaperEngine = requireNativeModule('WallpaperEngine');
+} catch (e) {
+  console.error('[WallpaperEngine] Native module not found. Please run: npx expo run:android');
+  WallpaperEngine = {
+    setWallpaper: async () => false,
+    setInteractiveWallpaper: async () => false,
+  };
+}
 
 export type WallpaperLocation = 'HOME' | 'LOCK' | 'BOTH';
 

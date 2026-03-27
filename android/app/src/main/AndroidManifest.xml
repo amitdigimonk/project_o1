@@ -28,5 +28,17 @@
         <data android:scheme="reactnativetemplate"/>
       </intent-filter>
     </activity>
+    <service
+        android:name=".ChillWallpaperService"
+        android:label="@string/app_name"
+        android:permission="android.permission.BIND_WALLPAPER"
+        android:exported="true">
+        <intent-filter>
+            <action android:name="android.service.wallpaper.WallpaperService" />
+        </intent-filter>
+        <meta-data
+            android:name="android.service.wallpaper"
+            android:resource="@xml/chill_wallpaper" />
+    </service>
   </application>
 </manifest>
