@@ -61,6 +61,14 @@ export const MOCK_WALLPAPERS: Wallpaper[] = [
     category: { id: 'mini_games_cat', name: { en: 'Mini Games' } }
   },
   {
+    _id: 'animated_particle_mock',
+    url: 'https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=2070&auto=format&fit=crop',
+    thumbnail: 'https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=2070&auto=format&fit=crop',
+    author: 'Toss Studio',
+    type: 'interactive' as any,
+    category: { id: 'animated', name: { en: 'Animated' } }
+  },
+  {
     _id: 'abstract_1',
     url: 'https://picsum.photos/seed/abs1/1080/2400',
     thumbnail: 'https://picsum.photos/seed/abs1/400/800',

@@ -1,3 +1,4 @@
+import React from 'react';
 import { requireNativeModule, requireNativeViewManager } from 'expo-modules-core';
 import { Platform, ViewProps } from 'react-native';
 

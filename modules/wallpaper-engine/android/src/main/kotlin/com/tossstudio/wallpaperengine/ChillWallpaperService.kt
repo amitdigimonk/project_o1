@@ -10,6 +10,9 @@ import android.graphics.Shader
 import expo.modules.kotlin.AppContext
 import expo.modules.kotlin.views.ExpoView
 import java.util.Calendar
+import kotlin.math.PI
+import kotlin.math.abs
+import kotlin.math.sin
 
 class ChillBackgroundView(context: Context, appContext: AppContext) : ExpoView(context, appContext) {
     private var frameTime = 0f 
@@ -46,7 +49,6 @@ class ChillBackgroundView(context: Context, appContext: AppContext) : ExpoView(c
     private val waterCrestPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = 3f; color = Color.argb(100, 255, 255, 255) }
 
     init {
-        // CRITICAL: Tells Android this ViewGroup actually draws things
         setWillNotDraw(false) 
     }
 
@@ -63,8 +65,8 @@ class ChillBackgroundView(context: Context, appContext: AppContext) : ExpoView(c
         var x = 0f
         while (x <= width + 15f) {
             val simulatedX = x + offsetX
-            val angle = (simulatedX / width).toDouble() * 2.0 * Math.PI * frequency.toDouble() + phase.toDouble()
-            val y = startY + (Math.sin(angle) * amplitude.toDouble()).toFloat()
+            val angle = ((simulatedX / width) * 2f * PI.toFloat() * frequency) + phase
+            val y = startY + (sin(angle) * amplitude)
             path.lineTo(x, y)
             x += 15f 
         }
@@ -99,7 +101,7 @@ class ChillBackgroundView(context: Context, appContext: AppContext) : ExpoView(c
         val h = height.toFloat()
         if (w == 0f || h == 0f) return
 
-        val density = context.resources.displayMetrics.density
+        val density = getContext().resources.displayMetrics.density
 
         if (!isInitialized || screenW != w || screenH != h) {
             screenW = w; screenH = h
@@ -107,11 +109,12 @@ class ChillBackgroundView(context: Context, appContext: AppContext) : ExpoView(c
             isInitialized = true
         }
 
-        // ── Use the Props sent from React Native! ──
         val time: Float = if (isLiveTime) {
             val calendar = Calendar.getInstance()
             calendar.get(Calendar.HOUR_OF_DAY).toFloat() + (calendar.get(Calendar.MINUTE).toFloat() / 60f)
-        } else manualTime
+        } else {
+            manualTime
+        }
 
         val isNight = time < 6f || time > 18f
 
@@ -174,29 +177,29 @@ class ChillBackgroundView(context: Context, appContext: AppContext) : ExpoView(c
         val wave1 = createWavePath(w, h, waterHorizon, 12f, 2f, 0f, frameTime * 150f)
         canvas.drawPath(wave1, waterPaintDeep); canvas.drawPath(wave1, waterShadowPaint)
 
-        val wave2 = createWavePath(w, h, waterHorizon + (20f * density), 20f, 3f, Math.PI.toFloat(), frameTime * 250f)
+        val wave2 = createWavePath(w, h, waterHorizon + (20f * density), 20f, 3f, PI.toFloat(), frameTime * 250f)
         canvas.drawPath(wave2, waterPaintShallow); canvas.drawPath(wave2, waterShadowPaint)
 
-        val wave3 = createWavePath(w, h, waterHorizon + (40f * density), 30f, 4f, (Math.PI / 2.0).toFloat(), frameTime * 400f)
+        val wave3 = createWavePath(w, h, waterHorizon + (40f * density), 30f, 4f, (PI / 2f).toFloat(), frameTime * 400f)
         canvas.drawPath(wave3, waterPaintDeep); canvas.drawPath(wave3, waterShadowPaint); canvas.drawPath(wave3, waterCrestPaint)
 
         // --- CELESTIAL ---
         if (time in 5.5f..18.5f) {
             val progress = interpolate(time, 6f, 18f, 0f, 1f)
             val cx = interpolate(progress, 0f, 1f, -20f, w - 80f)
-            val cy = interpolate(Math.sin(progress.toDouble() * Math.PI).toFloat(), 0f, 1f, h * 0.45f, h * 0.1f)
-            val scale = interpolate(Math.abs(progress - 0.5f), 0f, 0.5f, 0.55f, 0.95f)
+            val cy = interpolate(sin(progress * PI.toFloat()), 0f, 1f, h * 0.45f, h * 0.1f)
+            val scale = interpolate(abs(progress - 0.5f), 0f, 0.5f, 0.55f, 0.95f)
             canvas.save(); canvas.translate(cx, cy); canvas.scale(scale, scale); canvas.drawCircle(0f, 0f, 100f, sunPaint); canvas.restore()
         }
 
         if (time >= 17.5f || time <= 6.5f) {
             val progress = if (time >= 18f) interpolate(time, 18f, 24f, 0f, 0.5f) else interpolate(time, 0f, 6f, 0.5f, 1f)
             val cx = interpolate(progress, 0f, 1f, -20f, w - 80f)
-            val cy = interpolate(Math.sin(progress.toDouble() * Math.PI).toFloat(), 0f, 1f, h * 0.45f, h * 0.1f)
+            val cy = interpolate(sin(progress * PI.toFloat()), 0f, 1f, h * 0.45f, h * 0.1f)
             canvas.save(); canvas.translate(cx, cy); canvas.scale(0.8f, 0.8f); canvas.drawCircle(0f, 0f, 80f, moonPaint); canvas.restore()
         }
 
         frameTime += 0.016f
-        invalidate() // CRITICAL: This creates the 60fps render loop!
+        invalidate() // Loops the Native View
     }
 }

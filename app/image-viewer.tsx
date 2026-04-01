@@ -178,7 +178,10 @@ export default function ImageViewerScreen() {
 
     const handleApplyPress = useCallback((item: Wallpaper) => {
         if (item.type === ('interactive' as any)) {
-            androidWallpaperEngine.setInteractiveWallpaper();
+            const serviceName = item._id === 'animated_particle_mock' 
+                ? 'AnimatedParticleWallpaperService' 
+                : 'DinoWallpaperService';
+            androidWallpaperEngine.setInteractiveWallpaper(serviceName);
             return;
         }
         setPendingUrl(item.url);
