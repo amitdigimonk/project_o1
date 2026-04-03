@@ -1,18 +1,18 @@
+import CustomText from '@/components/CustomText';
+import WallpaperBottomSheet from '@/components/WallpaperBottomSheet';
 import { useTheme } from '@/hooks/useTheme';
+import { androidWallpaperEngine, WallpaperLocation } from '@/services/androidWallpaperEngine';
 import { getCachedWallpapers } from '@/services/wallpaperService';
 import { Wallpaper } from '@/types';
-import { androidWallpaperEngine, WallpaperLocation } from '@/services/androidWallpaperEngine';
-import WallpaperBottomSheet from '@/components/WallpaperBottomSheet';
 import { Ionicons } from '@expo/vector-icons';
-import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
+import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { ActivityIndicator, Alert, StyleSheet, TouchableOpacity, View, Platform, Dimensions, FlatList } from 'react-native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import CustomText from '@/components/CustomText';
-import { GestureHandlerRootView, GestureDetector, Gesture } from 'react-native-gesture-handler';
-import Animated, { useSharedValue, useAnimatedStyle, withTiming, Easing, interpolate, Extrapolate } from 'react-native-reanimated';
+import { ActivityIndicator, Alert, Dimensions, FlatList, Platform, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
+import Animated, { Easing, Extrapolate, interpolate, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const METADATA_HEIGHT = 280;
@@ -38,13 +38,13 @@ const GalleryItem = React.memo(({ item, colors, t, onApply }: GalleryItemProps) 
         })
         .onEnd((event) => {
             if (event.translationY < -100 || event.velocityY < -500) {
-                translateY.value = withTiming(-METADATA_HEIGHT, { 
-                    duration: 400, 
+                translateY.value = withTiming(-METADATA_HEIGHT, {
+                    duration: 400,
                     easing: Easing.out(Easing.back(0))
                 });
             } else {
-                translateY.value = withTiming(0, { 
-                    duration: 400, 
+                translateY.value = withTiming(0, {
+                    duration: 400,
                     easing: Easing.out(Easing.quad)
                 });
             }
@@ -145,7 +145,7 @@ export default function ImageViewerScreen() {
     const router = useRouter();
     const { t } = useTranslation();
     const { colors } = useTheme();
-    
+
     const [wallpapers, setWallpapers] = useState<Wallpaper[]>([]);
     const [isApplying, setIsApplying] = useState(false);
     const [isSheetVisible, setIsSheetVisible] = useState(false);
@@ -177,13 +177,39 @@ export default function ImageViewerScreen() {
     };
 
     const handleApplyPress = useCallback((item: Wallpaper) => {
-        if (item.type === ('interactive' as any)) {
-            const serviceName = item._id === 'animated_particle_mock' 
-                ? 'AnimatedParticleWallpaperService' 
-                : 'DinoWallpaperService';
+        console.log('[ImageViewer] Handle Apply Press:', { id: item._id, type: item.type, categoryId: item.category?.id });
+
+        if (item.type === ('interactive' as any) || item.category?.id === 'animated') {
+            let serviceName = 'DinoWallpaperService';
+
+            // Prioritize specific mock IDs, then category-based defaults
+            if (item._id === 'animated_particle_mock') {
+                serviceName = 'FloatingBokehWallpaperService';
+            } else if (item._id === 'blob_morph_mock') {
+                serviceName = 'BlobWallpaperService';
+            } else if (item._id === 'neural_network_mock') {
+                serviceName = 'NeuralWallpaperService';
+            } else if (item._id === 'orbit_mock' || item.category?.id === 'cosmic_cat') {
+                serviceName = 'OrbitWallpaperService';
+            } else if (item._id === 'rainy_day_mock') {
+                serviceName = 'RainWallpaperService';
+            } else if (item._id === 'gradient_mesh_mock') {
+                serviceName = 'GradientMeshWallpaperService';
+            } else if (item._id === 'glass_mock') {
+                serviceName = 'GlassWallpaperService';
+            } else if (item._id === 'plasma_mock') {
+                serviceName = 'PlasmaWallpaperService';
+            } else if (item.category?.id === 'animated' || item._id === 'aurora_waves_mock') {
+                serviceName = 'AuroraWallpaperService';
+            } else if (item._id === 'dino_game_mock') {
+                serviceName = 'DinoWallpaperService';
+            }
+
+            console.log('[ImageViewer] Setting interactive wallpaper:', serviceName);
             androidWallpaperEngine.setInteractiveWallpaper(serviceName);
             return;
         }
+
         setPendingUrl(item.url);
         if (Platform.OS === 'android') {
             setIsSheetVisible(true);
@@ -193,10 +219,10 @@ export default function ImageViewerScreen() {
     }, [t]);
 
     const renderItem = useCallback(({ item }: { item: Wallpaper }) => (
-        <GalleryItem 
-            item={item} 
-            colors={colors} 
-            t={t} 
+        <GalleryItem
+            item={item}
+            colors={colors}
+            t={t}
             onApply={() => handleApplyPress(item)}
         />
     ), [colors, t, handleApplyPress]);
@@ -371,4 +397,4 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         zIndex: 200,
     }
-});
+});
