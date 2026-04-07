@@ -99,8 +99,10 @@ class WallpaperEngineModule : Module() {
         val intent = Intent(WallpaperManager.ACTION_CHANGE_LIVE_WALLPAPER)
         val pkgName = context.packageName
         
-        // Exact path to the Service defined in your Manifest
-        val componentName = ComponentName(pkgName, "com.tossstudio.HtmlWallpaperService")
+        // Use the explicit service class name to avoid package name mismatch issues
+        // with implicit relative paths.
+        val serviceClass = "com.tossstudio.HtmlWallpaperService"
+        val componentName = ComponentName(pkgName, serviceClass)
 
         intent.putExtra(WallpaperManager.EXTRA_LIVE_WALLPAPER_COMPONENT, componentName)
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)

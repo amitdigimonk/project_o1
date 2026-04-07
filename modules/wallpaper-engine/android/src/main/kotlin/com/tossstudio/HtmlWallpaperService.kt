@@ -189,7 +189,9 @@ class HtmlWallpaperService : WallpaperService() {
 
         @SuppressLint("SetJavaScriptEnabled")
         private fun setupWebView(displayContext: Context) {
-            webView = WebView(displayContext).apply {
+            // THE FIX: Use Service context (this@HtmlWallpaperService) instead of DisplayContext
+            // to ensure the WebView has proper permissions for internal app files.
+            webView = WebView(this@HtmlWallpaperService).apply {
                 // CRITICAL FOR WEBGL: Force Hardware Acceleration
                 setLayerType(View.LAYER_TYPE_HARDWARE, null)
                 setBackgroundColor(android.graphics.Color.TRANSPARENT)
@@ -218,8 +220,15 @@ class HtmlWallpaperService : WallpaperService() {
             val htmlPath = prefs.getString(PREF_KEY_PATH, null)
 
             if (htmlPath != null) {
-                val cleanPath = if (htmlPath.startsWith("file://")) htmlPath else "file://$htmlPath"
-                val diskPath = cleanPath.replace("file://", "")
+                // Better path cleaning
+                val cleanPath = when {
+                    htmlPath.startsWith("file://") -> htmlPath
+                    htmlPath.startsWith("/") -> "file://$htmlPath"
+                    else -> "file://$htmlPath"
+                }
+                
+                val diskPath = cleanPath.replace("file://", "").replace("//", "/")
+                
                 if (File(diskPath).exists()) {
                     webView?.loadUrl(cleanPath)
                 } else {

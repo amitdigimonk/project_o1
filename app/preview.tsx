@@ -5,6 +5,7 @@ import { ImageData } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
 
 import { Image } from 'expo-image';
+import WallpaperCard from '@/components/WallpaperCard';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import React, { useState, useCallback, useEffect } from 'react';
@@ -62,29 +63,7 @@ const styles = StyleSheet.create({
     }
 });
 
-const ImageListItem = React.memo(({ item, index, colors, onPress }: {
-    item: ImageData;
-    index: number;
-    colors: any;
-    onPress: () => void;
-}) => {
-    return (
-        <TouchableOpacity
-            activeOpacity={0.9}
-            style={[styles.imageCard, { backgroundColor: colors.card }]}
-            onPress={onPress}
-        >
-            <Image
-                source={{ uri: item.url }}
-                style={[styles.image, { height: 260, backgroundColor: colors.border }]}
-                contentFit="cover"
-                transition={300}
-                cachePolicy="disk"
-                placeholder="L6PZf-ayfRyE00ayj[fQ~qj[fQj[" 
-            />
-        </TouchableOpacity>
-    );
-});
+// Removed ImageListItem as it is now in components/WallpaperCard.tsx
 
 export default function PreviewScreen() {
     const router = useRouter();
@@ -173,8 +152,8 @@ export default function PreviewScreen() {
     }, [router, selectedCategoryId]);
 
     const renderItem = useCallback(({ item, index }: { item: Wallpaper; index: number }) => (
-        <ImageListItem
-            item={{ id: item._id, url: item.url, author: item.author }}
+        <WallpaperCard
+            item={item}
             index={index}
             colors={colors}
             onPress={() => handleImagePress(index)}
