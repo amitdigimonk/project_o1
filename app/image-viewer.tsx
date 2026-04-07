@@ -10,7 +10,7 @@ import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Alert, Dimensions, FlatList, Platform, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Dimensions, FlatList, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, { Easing, Extrapolate, interpolate, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
@@ -89,9 +89,9 @@ const GalleryItem = React.memo(({ item, colors, t, onApply }: GalleryItemProps) 
                             <CustomText variant="heading" style={{ fontSize: 24 }}>{item.author || 'Creative Artist'}</CustomText>
                             <CustomText variant="caption">{t('imageViewer.metaAuthor')}</CustomText>
                         </View>
-                        <TouchableOpacity style={[styles.downloadBtn, { backgroundColor: colors.border }]}>
+                        <Pressable style={[styles.downloadBtn, { backgroundColor: colors.border }]}>
                             <Ionicons name="download-outline" size={20} color={colors.text} />
-                        </TouchableOpacity>
+                        </Pressable>
                     </View>
 
                     <View style={styles.infoGrid}>
@@ -111,7 +111,7 @@ const GalleryItem = React.memo(({ item, colors, t, onApply }: GalleryItemProps) 
                         </View>
                     </View>
 
-                    <TouchableOpacity
+                    <Pressable
                         style={[styles.applyButton, { backgroundColor: colors.primary, marginTop: 20 }]}
                         onPress={() => onApply()}
                     >
@@ -121,20 +121,20 @@ const GalleryItem = React.memo(({ item, colors, t, onApply }: GalleryItemProps) 
                                 {item.type === ('interactive' as any) ? "Apply Interactive Game" : t('imageViewer.applyButton')}
                             </CustomText>
                         </View>
-                    </TouchableOpacity>
+                    </Pressable>
                 </View>
             </Animated.View>
 
             {/* Floating Apply Button (Visible only when sheet is collapsed) */}
             <Animated.View style={[styles.footer, animatedFooterStyle]}>
-                <TouchableOpacity
+                <Pressable
                     style={[styles.applyButton, { backgroundColor: colors.primary }]}
                     onPress={() => onApply()}
                 >
                     <CustomText variant="body" color="#FFFFFF" style={{ fontWeight: 'bold' }}>
                         {item.type === ('interactive' as any) ? "Apply Game" : t('imageViewer.applyButton')}
                     </CustomText>
-                </TouchableOpacity>
+                </Pressable>
             </Animated.View>
         </View>
     );
@@ -273,13 +273,13 @@ export default function ImageViewerScreen() {
                     initialNumToRender={1}
                 />
 
-                <TouchableOpacity
+                <Pressable
                     style={styles.backButton}
                     onPress={() => router.back()}
                     disabled={isApplying}
                 >
                     <Ionicons name="chevron-back" size={28} color="#FFFFFF" />
-                </TouchableOpacity>
+                </Pressable>
 
                 <WallpaperBottomSheet
                     isVisible={isSheetVisible}
