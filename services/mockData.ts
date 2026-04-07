@@ -10,14 +10,6 @@ export const MOCK_CATEGORIES: Category[] = [
     type: 'main'
   },
   {
-    id: 'mini_games_cat',
-    name: { en: 'Mini Games', hi: 'मिनी गेम्स', ja: 'ミニゲーム', fr: 'Mini-jeux' },
-    title: 'Mini Games',
-    image: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=2070&auto=format&fit=crop',
-    count: '1',
-    type: 'main'
-  },
-  {
     id: 'abstract',
     name: { en: 'Abstract Elements', hi: 'एब्सट्रैक्ट', ja: '抽象', fr: 'Abstrait' },
     title: 'Abstract Elements',
@@ -41,105 +33,9 @@ export const MOCK_CATEGORIES: Category[] = [
     count: '98+',
     type: 'image'
   },
-  {
-    id: 'animated',
-    name: { en: 'Animated', hi: 'एनिमेटेड', ja: 'アニメーション', fr: 'Animé' },
-    title: 'Animated',
-    image: require('../assets/gif/Animated_Category_comppressed.mp4'),
-    count: '15+',
-    type: 'video'
-  },
-  {
-    id: 'cosmic_cat',
-    name: { en: 'Cosmic Dynamics', hi: 'कॉस्मिक', ja: '宇宙', fr: 'Cosmique' },
-    title: 'Cosmic Dynamics',
-    image: 'https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?q=80&w=2072&auto=format&fit=crop',
-    count: '5+',
-    type: 'video'
-  },
 ];
 
 export const MOCK_WALLPAPERS: Wallpaper[] = [
-  {
-    _id: 'dino_game_mock',
-    url: 'https://images.unsplash.com/photo-1551009175-8a68da93d5f9?q=80&w=2070&auto=format&fit=crop',
-    thumbnail: 'https://images.unsplash.com/photo-1551009175-8a68da93d5f9?q=80&w=2070&auto=format&fit=crop',
-    author: 'Toss Studio',
-    type: 'interactive',
-    category: { id: 'mini_games_cat', name: { en: 'Mini Games' } }
-  },
-  {
-    _id: 'animated_particle_mock',
-    url: 'https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=2070&auto=format&fit=crop',
-    thumbnail: 'https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=2070&auto=format&fit=crop',
-    author: 'Toss Studio',
-    type: 'interactive' as any,
-    category: { id: 'animated', name: { en: 'Animated' } }
-  },
-  {
-    _id: 'aurora_waves_mock',
-    url: 'https://images.unsplash.com/photo-1531306728370-e2ebd9d7bb99?q=80&w=2070&auto=format&fit=crop',
-    thumbnail: 'https://images.unsplash.com/photo-1531306728370-e2ebd9d7bb99?q=80&w=2070&auto=format&fit=crop',
-    author: 'Toss Studio',
-    type: 'interactive' as any,
-    category: { id: 'animated', name: { en: 'Animated' } }
-  },
-  {
-    _id: 'blob_morph_mock',
-    url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2064&auto=format&fit=crop',
-    thumbnail: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2070&auto=format&fit=crop',
-    author: 'Toss Studio',
-    type: 'interactive' as any,
-    category: { id: 'animated', name: { en: 'Animated' } }
-  },
-  {
-    _id: 'neural_network_mock',
-    url: 'https://images.unsplash.com/photo-1509228468518-180dd486490e?q=80&w=2070&auto=format&fit=crop',
-    thumbnail: 'https://images.unsplash.com/photo-1509228468518-180dd486490e?q=80&w=2070&auto=format&fit=crop',
-    author: 'Toss Studio',
-    type: 'interactive' as any,
-    category: { id: 'animated', name: { en: 'Animated' } }
-  },
-  {
-    _id: 'orbit_mock',
-    url: 'https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?q=80&w=2072&auto=format&fit=crop',
-    thumbnail: 'https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?q=80&w=2072&auto=format&fit=crop',
-    author: 'Toss Studio',
-    type: 'interactive' as any,
-    category: { id: 'cosmic_cat', name: { en: 'Cosmic Dynamics' } }
-  },
-  {
-    _id: 'rainy_day_mock',
-    url: 'https://images.unsplash.com/photo-1515694346937-94d85e41e6f0?q=80&w=2070&auto=format&fit=crop',
-    thumbnail: 'https://images.unsplash.com/photo-1515694346937-94d85e41e6f0?q=80&w=2070&auto=format&fit=crop',
-    author: 'Toss Studio',
-    type: 'interactive' as any,
-    category: { id: 'animated', name: { en: 'Animated' } }
-  },
-  {
-    _id: 'gradient_mesh_mock',
-    url: 'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?q=80&w=2070&auto=format&fit=crop',
-    thumbnail: 'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?q=80&w=2070&auto=format&fit=crop',
-    author: 'Toss Studio',
-    type: 'interactive' as any,
-    category: { id: 'animated', name: { en: 'Animated' } }
-  },
-  {
-    _id: 'glass_mock',
-    url: 'https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?q=80&w=2074&auto=format&fit=crop',
-    thumbnail: 'https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?q=80&w=2070&auto=format&fit=crop',
-    author: 'Toss Studio',
-    type: 'interactive' as any,
-    category: { id: 'animated', name: { en: 'Animated' } }
-  },
-  {
-    _id: 'plasma_mock',
-    url: 'https://images.unsplash.com/photo-1614850523296-d8c1af93d400?q=80&w=2070&auto=format&fit=crop',
-    thumbnail: 'https://images.unsplash.com/photo-1614850523296-d8c1af93d400?q=80&w=2070&auto=format&fit=crop',
-    author: 'Toss Studio',
-    type: 'interactive' as any,
-    category: { id: 'animated', name: { en: 'Animated' } }
-  },
   {
     _id: 'abstract_1',
     url: 'https://picsum.photos/seed/abs1/1080/2400',

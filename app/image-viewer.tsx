@@ -179,34 +179,11 @@ export default function ImageViewerScreen() {
     const handleApplyPress = useCallback((item: Wallpaper) => {
         console.log('[ImageViewer] Handle Apply Press:', { id: item._id, type: item.type, categoryId: item.category?.id });
 
-        if (item.type === ('interactive' as any) || item.category?.id === 'animated') {
-            let serviceName = 'DinoWallpaperService';
-
-            // Prioritize specific mock IDs, then category-based defaults
-            if (item._id === 'animated_particle_mock') {
-                serviceName = 'FloatingBokehWallpaperService';
-            } else if (item._id === 'blob_morph_mock') {
-                serviceName = 'BlobWallpaperService';
-            } else if (item._id === 'neural_network_mock') {
-                serviceName = 'NeuralWallpaperService';
-            } else if (item._id === 'orbit_mock' || item.category?.id === 'cosmic_cat') {
-                serviceName = 'OrbitWallpaperService';
-            } else if (item._id === 'rainy_day_mock') {
-                serviceName = 'RainWallpaperService';
-            } else if (item._id === 'gradient_mesh_mock') {
-                serviceName = 'GradientMeshWallpaperService';
-            } else if (item._id === 'glass_mock') {
-                serviceName = 'GlassWallpaperService';
-            } else if (item._id === 'plasma_mock') {
-                serviceName = 'PlasmaWallpaperService';
-            } else if (item.category?.id === 'animated' || item._id === 'aurora_waves_mock') {
-                serviceName = 'AuroraWallpaperService';
-            } else if (item._id === 'dino_game_mock') {
-                serviceName = 'DinoWallpaperService';
-            }
-
-            console.log('[ImageViewer] Setting interactive wallpaper:', serviceName);
-            androidWallpaperEngine.setInteractiveWallpaper(serviceName);
+        if (item.type === ('interactive' as any)) {
+            // All interactive wallpapers are now served by HtmlWallpaperService.
+            // The active index.html is written to SharedPreferences via
+            // WallpaperEngineModule.saveHtmlWallpaperPath() before calling apply.
+            androidWallpaperEngine.setInteractiveWallpaper('HtmlWallpaperService');
             return;
         }
 

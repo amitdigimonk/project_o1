@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>Vibe Walls — HTML5 Payload</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #000;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<script>
+  // ─────────────────────────────────────────────────────────────────────────────
+  //  Vibe Walls — 2D Physics Sprite Engine (boilerplate)
+  //
+  //  Demonstrates:
+  //   • Full-screen HTML5 Canvas 2D animation (bouncing physics balls)
+  //   • pauseWallpaper / playWallpaper events from HtmlWallpaperService.kt
+  //   • requestAnimationFrame battery-aware start/stop
+  //   • Touch / pointer interaction (repels balls on tap)
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  const canvas = document.getElementById('c');
+  const ctx    = canvas.getContext('2d');
+
+  // ── Config ──────────────────────────────────────────────────────────────────
+
+  const CONFIG = {
+    ballCount:    28,
+    minRadius:    14,
+    maxRadius:    36,
+    gravity:      0.18,
+    friction:     0.995,   // velocity damping per frame
+    repelForce:   8,       // impulse applied on touch
+    repelRadius:  120,     // px radius of touch repulsion
+    trailAlpha:   0.18,    // background clear alpha (lower = longer trails)
+    palette: [
+      '#ff6b6b', '#feca57', '#48dbfb', '#ff9ff3',
+      '#54a0ff', '#5f27cd', '#00d2d3', '#ff9f43',
+      '#1dd1a1', '#c8d6e5',
+    ],
+  };
+
+  // ── State ────────────────────────────────────────────────────────────────────
+
+  let W = 0, H = 0;
+  let animFrameId  = null;
+  let paused       = false;
+  let lastPointer  = null;   // { x, y } for repulsion
+
+  // ── Ball class ───────────────────────────────────────────────────────────────
+
+  class Ball {
+    constructor() { this.reset(true); }
+
+    reset(initialPlacement = false) {
+      this.r     = CONFIG.minRadius + Math.random() * (CONFIG.maxRadius - CONFIG.minRadius);
+      this.x     = this.r + Math.random() * (W - this.r * 2);
+      this.y     = initialPlacement
+                     ? this.r + Math.random() * (H - this.r * 2)
+                     : -this.r * 2;
+      this.vx    = (Math.random() - 0.5) * 3;
+      this.vy    = Math.random() * 2 + 1;
+      this.color = CONFIG.palette[Math.floor(Math.random() * CONFIG.palette.length)];
+      this.glow  = Math.random() > 0.5;
+    }
+
+    update() {
+      this.vy += CONFIG.gravity;
+      this.vx *= CONFIG.friction;
+      this.vy *= CONFIG.friction;
+
+      // Touch / pointer repulsion
+      if (lastPointer) {
+        const dx = this.x - lastPointer.x;
+        const dy = this.y - lastPointer.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < CONFIG.repelRadius && dist > 0) {
+          const force = (CONFIG.repelRadius - dist) / CONFIG.repelRadius;
+          this.vx += (dx / dist) * CONFIG.repelForce * force;
+          this.vy += (dy / dist) * CONFIG.repelForce * force;
+        }
+      }
+
+      this.x += this.vx;
+      this.y += this.vy;
+
+      // Wall bounce
+      if (this.x - this.r < 0)  { this.x = this.r;      this.vx = Math.abs(this.vx) * 0.7; }
+      if (this.x + this.r > W)  { this.x = W - this.r;  this.vx = -Math.abs(this.vx) * 0.7; }
+      if (this.y + this.r > H)  { this.y = H - this.r;  this.vy = -Math.abs(this.vy) * 0.75; }
+
+      // Reset if it somehow escapes off the top after bouncing
+      if (this.y - this.r > H) { this.reset(); }
+    }
+
+    draw() {
+      ctx.save();
+
+      if (this.glow) {
+        ctx.shadowBlur  = 20;
+        ctx.shadowColor = this.color;
+      }
+
+      // Radial gradient for 3-D sheen
+      const grad = ctx.createRadialGradient(
+        this.x - this.r * 0.3, this.y - this.r * 0.3, this.r * 0.1,
+        this.x,                this.y,                 this.r
+      );
+      grad.addColorStop(0, lighten(this.color, 60));
+      grad.addColorStop(1, this.color);
+
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+      ctx.fillStyle = grad;
+      ctx.fill();
+
+      ctx.restore();
+    }
+  }
+
+  // ── Colour helper ─────────────────────────────────────────────────────────────
+
+  function lighten(hex, amount) {
+    const num = parseInt(hex.slice(1), 16);
+    const r   = Math.min(255, (num >> 16) + amount);
+    const g   = Math.min(255, ((num >> 8) & 0xff) + amount);
+    const b   = Math.min(255, (num & 0xff) + amount);
+    return `rgb(${r},${g},${b})`;
+  }
+
+  // ── Resize ────────────────────────────────────────────────────────────────────
+
+  function resize() {
+    W = canvas.width  = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+
+  window.addEventListener('resize', resize);
+  resize();
+
+  // ── Ball pool ─────────────────────────────────────────────────────────────────
+
+  let balls = [];
+
+  function initBalls() {
+    balls = Array.from({ length: CONFIG.ballCount }, () => new Ball());
+  }
+
+  initBalls();
+
+  // ── Render loop ───────────────────────────────────────────────────────────────
+
+  function drawBackground() {
+    // Semi-transparent clear creates motion-trail effect
+    ctx.fillStyle = `rgba(10, 10, 26, ${CONFIG.trailAlpha})`;
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  function frame() {
+    if (paused) return;                  // honour native pauseWallpaper event
+
+    animFrameId = requestAnimationFrame(frame);
+
+    drawBackground();
+    balls.forEach(b => { b.update(); b.draw(); });
+  }
+
+  // ── Start / stop ──────────────────────────────────────────────────────────────
+
+  function play() {
+    if (animFrameId !== null) return;    // already running
+    paused = false;
+    frame();
+  }
+
+  function pause() {
+    paused = true;
+    if (animFrameId !== null) {
+      cancelAnimationFrame(animFrameId);
+      animFrameId = null;
+    }
+  }
+
+  // ── Battery-aware pause/play via native Kotlin events ─────────────────────────
+  //
+  //  HtmlWallpaperService.kt dispatches these CustomEvents when the wallpaper
+  //  becomes visible (home screen shown) or hidden (app opened, screen off).
+
+  window.addEventListener('pauseWallpaper', () => {
+    console.log('[Payload] pauseWallpaper received — stopping RAF loop');
+    pause();
+  });
+
+  window.addEventListener('playWallpaper', () => {
+    console.log('[Payload] playWallpaper received — resuming RAF loop');
+    play();
+  });
+
+  // ── Touch / pointer interaction ───────────────────────────────────────────────
+
+  function getPos(e) {
+    if (e.touches && e.touches.length > 0) {
+      return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    }
+    return { x: e.clientX, y: e.clientY };
+  }
+
+  canvas.addEventListener('pointerdown', e => { lastPointer = getPos(e); });
+  canvas.addEventListener('pointermove', e => {
+    if (e.buttons || e.touches) lastPointer = getPos(e);
+  });
+  canvas.addEventListener('pointerup',   () => { lastPointer = null; });
+  canvas.addEventListener('pointerout',  () => { lastPointer = null; });
+
+  // Fallback for touch events (older WebView builds)
+  canvas.addEventListener('touchstart', e => { lastPointer = getPos(e); e.preventDefault(); }, { passive: false });
+  canvas.addEventListener('touchmove',  e => { lastPointer = getPos(e); e.preventDefault(); }, { passive: false });
+  canvas.addEventListener('touchend',   () => { lastPointer = null; });
+
+  // ── Boot ──────────────────────────────────────────────────────────────────────
+
+  play();
+</script>
+</body>
+</html>

@@ -1,62 +1,17 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
   package="com.tossstudio.wallpaperengine">
-  
+
   <application>
+
+    <!--
+      HtmlWallpaperService — universal WebView-based HTML5/Canvas live wallpaper.
+      All wallpaper content is delivered as .zip files containing index.html and
+      loaded over-the-air. The active file:// path is stored in SharedPreferences
+      "HtmlWallpaperPrefs" by WallpaperEngineModule.saveHtmlWallpaperPath().
+    -->
     <service
-        android:name=".DinoWallpaperService"
-        android:enabled="true"
-        android:exported="true"
-        android:permission="android.permission.BIND_WALLPAPER">
-        <intent-filter>
-            <action android:name="android.service.wallpaper.WallpaperService" />
-        </intent-filter>
-        <meta-data
-            android:name="android.service.wallpaper"
-            android:resource="@xml/dino_wallpaper" />
-    </service>
-
-<service
-        android:name=".ChillWallpaperService"
-        android:enabled="true"
-        android:exported="true"
-        android:permission="android.permission.BIND_WALLPAPER">
-        <intent-filter>
-            <action android:name="android.service.wallpaper.WallpaperService" />
-        </intent-filter>
-        <meta-data
-            android:name="android.service.wallpaper"
-            android:resource="@xml/dino_wallpaper" />
-    </service>
-
-    <service
-        android:name=".FloatingBokehWallpaperService"
-        android:enabled="true"
-        android:exported="true"
-        android:permission="android.permission.BIND_WALLPAPER">
-        <intent-filter>
-            <action android:name="android.service.wallpaper.WallpaperService" />
-        </intent-filter>
-        <meta-data
-            android:name="android.service.wallpaper"
-            android:resource="@xml/dino_wallpaper" />
-    </service>
-
-    <service
-    android:name=".AuroraWallpaperService"
-    android:permission="android.permission.BIND_WALLPAPER"
-    android:exported="true">
-
-    <intent-filter>
-        <action android:name="android.service.wallpaper.WallpaperService" />
-    </intent-filter>
-
-        <meta-data
-            android:name="android.service.wallpaper"
-            android:resource="@xml/wallpaper" />
-    </service>
-
-    <service
-        android:name=".BlobWallpaperService"
+        android:name=".HtmlWallpaperService"
+        android:label="HTML5 Wallpaper"
         android:permission="android.permission.BIND_WALLPAPER"
         android:exported="true">
         <intent-filter>
@@ -64,74 +19,7 @@
         </intent-filter>
         <meta-data
             android:name="android.service.wallpaper"
-            android:resource="@xml/wallpaper" />
-    </service>
-    <service
-        android:name=".NeuralWallpaperService"
-        android:permission="android.permission.BIND_WALLPAPER"
-        android:exported="true">
-        <intent-filter>
-            <action android:name="android.service.wallpaper.WallpaperService" />
-        </intent-filter>
-        <meta-data
-            android:name="android.service.wallpaper"
-            android:resource="@xml/wallpaper" />
-    </service>
-    <service
-        android:name=".OrbitWallpaperService"
-        android:permission="android.permission.BIND_WALLPAPER"
-        android:exported="true">
-        <intent-filter>
-            <action android:name="android.service.wallpaper.WallpaperService" />
-        </intent-filter>
-        <meta-data
-            android:name="android.service.wallpaper"
-            android:resource="@xml/wallpaper" />
-    </service>
-    <service
-        android:name=".RainWallpaperService"
-        android:permission="android.permission.BIND_WALLPAPER"
-        android:exported="true">
-        <intent-filter>
-            <action android:name="android.service.wallpaper.WallpaperService" />
-        </intent-filter>
-        <meta-data
-            android:name="android.service.wallpaper"
-            android:resource="@xml/wallpaper" />
-    </service>
-    <service
-        android:name=".GradientMeshWallpaperService"
-        android:permission="android.permission.BIND_WALLPAPER"
-        android:exported="true">
-        <intent-filter>
-            <action android:name="android.service.wallpaper.WallpaperService" />
-        </intent-filter>
-        <meta-data
-            android:name="android.service.wallpaper"
-            android:resource="@xml/wallpaper" />
-    </service>
-    <service
-        android:name=".GlassWallpaperService"
-        android:permission="android.permission.BIND_WALLPAPER"
-        android:exported="true">
-        <intent-filter>
-            <action android:name="android.service.wallpaper.WallpaperService" />
-        </intent-filter>
-        <meta-data
-            android:name="android.service.wallpaper"
-            android:resource="@xml/wallpaper" />
-    </service>
-
-    <service
-        android:name=".PlasmaWallpaperService"
-        android:permission="android.permission.BIND_WALLPAPER"
-        android:exported="true">
-        <intent-filter>
-            <action android:name="android.service.wallpaper.WallpaperService" />
-        </intent-filter>
-        <meta-data
-            android:name="android.service.wallpaper"
-            android:resource="@xml/wallpaper" />
+            android:resource="@xml/html_wallpaper" />
     </service>
 
   </application>

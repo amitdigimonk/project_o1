@@ -81,18 +81,59 @@ class WallpaperEngineModule : Module() {
 
     Function("syncChillSettings") { settings: Map<String, Any> ->
       val context = appContext.reactContext ?: return@Function
-      
+
       val prefs = context.getSharedPreferences("ChillWallpaperPrefs", Context.MODE_PRIVATE)
-      
+
       prefs.edit().apply {
           putString("weatherOverride", settings["weatherOverride"] as? String ?: "clear")
           putString("seasonOverride", settings["seasonOverride"] as? String ?: "spring")
           putBoolean("liveTime", settings["liveTime"] as? Boolean ?: true)
-          
+
           val manualTimeNum = settings["manualTime"] as? Number
           putFloat("manualTime", manualTimeNum?.toFloat() ?: 12f)
-          
+
           apply()
+      }
+    }
+
+    /**
+     * Persists the absolute file:// URL of the unzipped index.html into
+     * SharedPreferences so HtmlWallpaperService can read it on (re)start.
+     *
+     * @param path  Full file URL, e.g. "file:///data/user/0/com.tossstudio/files/wallpaper/index.html"
+     */
+    Function("saveHtmlWallpaperPath") { path: String ->
+      val context = appContext.reactContext ?: return@Function false
+      context
+        .getSharedPreferences(HtmlWallpaperService.PREFS_NAME, Context.MODE_PRIVATE)
+        .edit()
+        .putString(HtmlWallpaperService.PREF_KEY_PATH, path)
+        .apply()
+      return@Function true
+    }
+
+    /**
+     * Fires the system ACTION_CHANGE_LIVE_WALLPAPER intent pre-pointed at
+     * HtmlWallpaperService so the user lands directly on the preview screen.
+     *
+     * Make sure saveHtmlWallpaperPath() has been called first, otherwise the
+     * wallpaper will show the fallback "no wallpaper loaded" page.
+     */
+    Function("applyHtmlWallpaper") {
+      val context = appContext.reactContext ?: return@Function false
+      return@Function try {
+        val intent = Intent(WallpaperManager.ACTION_CHANGE_LIVE_WALLPAPER).apply {
+          putExtra(
+            WallpaperManager.EXTRA_LIVE_WALLPAPER_COMPONENT,
+            ComponentName(context.packageName, HtmlWallpaperService::class.java.name)
+          )
+          addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        context.startActivity(intent)
+        true
+      } catch (e: Exception) {
+        e.printStackTrace()
+        false
       }
     }
   }
