@@ -23,7 +23,9 @@
       "predictiveBackGestureEnabled": false,
       "package": "com.tossstudio",
       "permissions": [
-        "SET_WALLPAPER"
+        "SET_WALLPAPER",
+        "android.permission.INTERNET",
+        "android.permission.BIND_WALLPAPER"
       ],
       "jsEngine": "hermes"
     },
@@ -46,7 +48,9 @@
         }
       ],
       "expo-font",
-      "expo-video"
+      "expo-video",
+      "expo-asset",
+      "./plugins/withWallpaperAssets"
     ],
     "experiments": {
       "typedRoutes": true,

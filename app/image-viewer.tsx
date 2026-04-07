@@ -2,6 +2,7 @@ import CustomText from '@/components/CustomText';
 import WallpaperBottomSheet from '@/components/WallpaperBottomSheet';
 import { useTheme } from '@/hooks/useTheme';
 import { androidWallpaperEngine, WallpaperLocation } from '@/services/androidWallpaperEngine';
+import { prepareAndApplyHtmlWallpaper } from '@/services/htmlWallpaperLoader';
 import { getCachedWallpapers } from '@/services/wallpaperService';
 import { Wallpaper } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
@@ -60,9 +61,15 @@ const GalleryItem = React.memo(({ item, colors, t, onApply }: GalleryItemProps) 
         opacity: interpolate(translateY.value, [0, -METADATA_HEIGHT / 2], [0, 1], Extrapolate.CLAMP)
     }));
 
-    const animatedFooterStyle = useAnimatedStyle(() => ({
-        opacity: interpolate(translateY.value, [0, -100], [1, 0])
-    }));
+    const animatedFooterStyle = useAnimatedStyle(() => {
+        const opacity = interpolate(translateY.value, [0, -100], [1, 0], Extrapolate.CLAMP);
+        return {
+            opacity,
+            pointerEvents: opacity < 0.1 ? 'none' : 'auto'
+        };
+    });
+
+    const isInteractive = item.type === 'interactive';
 
     return (
         <View style={styles.galleryItemContainer}>
@@ -116,9 +123,9 @@ const GalleryItem = React.memo(({ item, colors, t, onApply }: GalleryItemProps) 
                         onPress={() => onApply()}
                     >
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                            <Ionicons name={item.type === ('interactive' as any) ? "game-controller-outline" : "color-palette-outline"} size={20} color="#FFFFFF" />
+                            <Ionicons name={isInteractive ? "sparkles-outline" : "color-palette-outline"} size={20} color="#FFFFFF" />
                             <CustomText variant="body" color="#FFFFFF" style={{ fontWeight: 'bold' }}>
-                                {item.type === ('interactive' as any) ? "Apply Interactive Game" : t('imageViewer.applyButton')}
+                                {isInteractive ? "Apply Interactive Wallpaper" : t('imageViewer.applyButton')}
                             </CustomText>
                         </View>
                     </Pressable>
@@ -132,7 +139,7 @@ const GalleryItem = React.memo(({ item, colors, t, onApply }: GalleryItemProps) 
                     onPress={() => onApply()}
                 >
                     <CustomText variant="body" color="#FFFFFF" style={{ fontWeight: 'bold' }}>
-                        {item.type === ('interactive' as any) ? "Apply Game" : t('imageViewer.applyButton')}
+                        {isInteractive ? "Set Live" : t('imageViewer.applyButton')}
                     </CustomText>
                 </Pressable>
             </Animated.View>
@@ -176,17 +183,35 @@ export default function ImageViewerScreen() {
         }
     };
 
-    const handleApplyPress = useCallback((item: Wallpaper) => {
-        console.log('[ImageViewer] Handle Apply Press:', { id: item._id, type: item.type, categoryId: item.category?.id });
+    const handleApplyPress = useCallback(async (item: Wallpaper) => {
+        if (item.type === 'interactive') {
+            // Check if we have the raw code string available
+            if (!item.indexCode) {
+                Alert.alert("Error", "Interactive code data is missing.");
+                return;
+            }
 
-        if (item.type === ('interactive' as any)) {
-            // All interactive wallpapers are now served by HtmlWallpaperService.
-            // The active index.html is written to SharedPreferences via
-            // WallpaperEngineModule.saveHtmlWallpaperPath() before calling apply.
-            androidWallpaperEngine.setInteractiveWallpaper('HtmlWallpaperService');
+            setIsApplying(true);
+            try {
+                // Save the string to index.html and trigger the intent
+                const result = await prepareAndApplyHtmlWallpaper(item.indexCode);
+
+                if (!result.success) {
+                    throw new Error(result.error || 'Failed to prepare wallpaper');
+                }
+
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            } catch (error: any) {
+                console.error("[ImageViewer] Interactive Apply Error:", error);
+                Alert.alert("Error", error.message || "Could not apply interactive wallpaper.");
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+            } finally {
+                setIsApplying(false);
+            }
             return;
         }
 
+        // Static Wallpaper Flow
         setPendingUrl(item.url);
         if (Platform.OS === 'android') {
             setIsSheetVisible(true);
@@ -207,12 +232,10 @@ export default function ImageViewerScreen() {
     const onViewableItemsChanged = useRef(({ viewableItems }: any) => {
         if (viewableItems.length > 0) {
             const currentIndex = viewableItems[0].index;
-            // Pre-fetch next 2 images
             [1, 2].forEach(offset => {
                 const nextItem = wallpapers[currentIndex + offset];
                 if (nextItem) Image.prefetch(nextItem.url);
             });
-            // Pre-fetch previous image
             const prevItem = wallpapers[currentIndex - 1];
             if (prevItem) Image.prefetch(prevItem.url);
         }
@@ -310,6 +333,7 @@ const styles = StyleSheet.create({
         width: '100%',
         alignItems: 'center',
         paddingHorizontal: 20,
+        zIndex: 100,
     },
     applyButton: {
         width: '100%',

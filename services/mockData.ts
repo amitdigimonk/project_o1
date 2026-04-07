@@ -1,13 +1,41 @@
 import { Category, Wallpaper } from '../types';
 
+
+const VIBY_ORBS_CODE = `
+<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><style>body,html{margin:0;padding:0;width:100%;height:100%;background:#0F172A;overflow:hidden;}canvas{display:block;}</style></head><body><canvas id="c"></canvas><script>const canvas=document.getElementById('c'),ctx=canvas.getContext('2d');let w,h,isPlaying=true;function resize(){w=window.innerWidth;h=window.innerHeight;canvas.width=w;canvas.height=h;}window.addEventListener('resize',resize);resize();let t=0;function draw(){if(!isPlaying)return;ctx.fillStyle='rgba(15,23,42,0.1)';ctx.fillRect(0,0,w,h);ctx.beginPath();ctx.arc(w/2,h/2,50+Math.sin(t)*10,0,Math.PI*2);ctx.fillStyle='#93C5FD';ctx.fill();t+=0.05;requestAnimationFrame(draw);}window.addEventListener('pauseWallpaper',()=>isPlaying=false);window.addEventListener('playWallpaper',()=>isPlaying=true);draw();</script></body></html>
+`;
+
+const NEURAL_FLOW_CODE = `<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><style>body,html{margin:0;padding:0;width:100%;height:100%;background:#000;overflow:hidden;touch-action:none;}canvas{display:block;}</style></head><body><canvas id="c"></canvas><script>const canvas=document.getElementById('c'),ctx=canvas.getContext('2d');let w,h,isPlaying=true;function resize(){w=canvas.width=window.innerWidth;h=canvas.height=window.innerHeight;}window.addEventListener('resize',resize);resize();let t=0;function draw(){if(!isPlaying)return;ctx.fillStyle='rgba(0,0,0,0.05)';ctx.fillRect(0,0,w,h);for(let i=0;i<30;i++){const x=w/2+Math.sin(t+i)*Math.cos(t*0.5+i)*w*0.4;const y=h/2+Math.sin(t*0.8+i)*h*0.3;ctx.beginPath();ctx.arc(x,y,2,0,Math.PI*2);ctx.fillStyle=\`hsl(\${(t*50+i*10)%360},70%,70%)\`;ctx.fill();}t+=0.01;requestAnimationFrame(draw);}window.addEventListener('pauseWallpaper',()=>isPlaying=false);window.addEventListener('playWallpaper',()=>isPlaying=true);draw();</script></body></html>`;
+
+const AETHER_DRIFT_CODE = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><style>body,html{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#000;touch-action:none;}canvas{display:block;width:100%;height:100%;filter:blur(0.5px);}</style></head><body><canvas></canvas><script>let isPlaying=true,animationId;const canvas=document.getElementsByTagName('canvas')[0];canvas.width=window.innerWidth;canvas.height=window.innerHeight;const config={NUM_COLORS:5,PAUSED:false};window.addEventListener('pauseWallpaper',()=>{isPlaying=false;config.PAUSED=true;});window.addEventListener('playWallpaper',()=>{if(!isPlaying){isPlaying=true;config.PAUSED=false;requestAnimationFrame(step);}});let t=0;function step(){if(config.PAUSED)return;ctx.fillStyle='rgba(0,0,0,0.02)';ctx.fillRect(0,0,canvas.width,canvas.height);t+=0.01;const scrollX=(window.scrollOffset||0.5)-0.5;const tiltX=(window.rotationData?.gamma||0)*0.01;const tiltY=(window.rotationData?.beta||0)*0.01;for(let i=0;i<config.NUM_COLORS;i++){const s=i*2;const color=(t*40+i*30)%360;const driftX=Math.sin(t+s)*w*0.35+scrollX*w*0.8+tiltX*w*0.2;const driftY=Math.cos(t*0.7+s)*h*0.3+tiltY*h*0.2;const x=w/2+driftX,y=h/2+driftY;ctx.beginPath();ctx.arc(x,y,2+(i*0.5),0,Math.PI*2);ctx.fillStyle=\`hsl(\${color},80%,75%)\`;ctx.fill()}animationId=requestAnimationFrame(step)}const ctx=canvas.getContext('2d'),w=canvas.width,h=canvas.height;window.addEventListener('resize',()=>{canvas.width=window.innerWidth;canvas.height=window.innerHeight;});requestAnimationFrame(step);</script></body></html>`;
+
+const COSMOS_CODE = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><style>body,html{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#000;touch-action:none;}</style></head><body><canvas id="c"></canvas><script>const canvas=document.getElementById('c'),ctx=canvas.getContext('2d');let w,h,isPlaying=true;function resize(){w=canvas.width=window.innerWidth;h=canvas.height=window.innerHeight;}window.addEventListener('resize',resize);resize();const count=4000;const stars=[];for(let i=0;i<count;i++){const r=Math.random()*400,a=r*0.05+(Math.random()-0.5)*1.5;stars.push({x:r*Math.cos(a),y:(Math.random()-0.5)*50,z:r*Math.sin(a),s:Math.random()*1.5+0.5,c:\`hsl(\${180+r/2},80%,75%)\`,vx:0,vy:0})}window.addEventListener('pauseWallpaper',()=>isPlaying=false);window.addEventListener('playWallpaper',()=>isPlaying=true);let mouse={x:0,y:0,active:false};window.addEventListener('touchstart',e=>{mouse.active=true;uM(e)});window.addEventListener('touchmove',e=>uM(e));window.addEventListener('touchend',()=>mouse.active=false);function uM(e){const t=e.touches[0];mouse.x=t.clientX;mouse.y=t.clientY}let t=0;function draw(){if(!isPlaying)return;ctx.fillStyle='#000';ctx.fillRect(0,0,w,h);t+=0.002;const rot=window.rotationData||{beta:0,gamma:0};const tiltX=rot.gamma*2,tiltY=rot.beta*2,camZ=600;for(let i=0;i<count;i++){const s=stars[i];let x=s.x,y=s.y,z=s.z;const cosT=Math.cos(t),sinT=Math.sin(t);let rx=x*cosT-z*sinT,rz=x*sinT+z*cosT;if(mouse.active){const f=camZ/(camZ+rz);const px=w/2+(rx+tiltX)*f,py=h/2+(y+tiltY)*f;const dx=px-mouse.x,dy=py-mouse.y;const d=Math.sqrt(dx*dx+dy*dy);if(d<100){const force=(100-d)*0.001;s.vx-=dx*force;s.vy-=dy*force}}s.x+=s.vx;s.y+=s.vy;s.vx*=0.95;s.vy*=0.95;const f=camZ/(camZ+rz);const px=w/2+(rx+tiltX)*f,py=h/2+(y+tiltY)*f;if(px>0&&px<w&&py>0&&py<h){const size=s.s*f;ctx.fillStyle=s.c;ctx.beginPath();ctx.arc(px,py,size,0,Math.PI*2);ctx.fill()}}requestAnimationFrame(draw)}draw();</script></body></html>`;
+
+const WILD_RANGER_CODE = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><style>body,html{margin:0;padding:0;width:100%;height:100%;background:#000505;overflow:hidden;touch-action:none;}canvas{display:block;}</style></head><body><canvas id="c"></canvas><script>const c=document.getElementById('c'),ctx=c.getContext('2d');let w,h,isPlaying=true,t=0;function resize(){w=c.width=window.innerWidth*window.devicePixelRatio;h=c.height=window.innerHeight*window.devicePixelRatio;ctx.scale(window.devicePixelRatio,window.devicePixelRatio);w=window.innerWidth;h=window.innerHeight;}window.addEventListener('resize',resize);resize();const flies=Array.from({length:60},()=>({x:Math.random()*2000-1000,y:Math.random()*-800,z:Math.random()*2000,vx:(Math.random()-.5)*1.5,vy:(Math.random()-.5)*1.5,s:Math.random()*2+1}));const segments=[],segCount=30,segLen=140;for(let i=0;i<segCount;i++){segments.push({z:i*segLen,trees:Array.from({length:4},()=>({side:Math.random()>.5?1:-1,dist:100+Math.random()*250,h:180+Math.random()*220,w:45+Math.random()*50,o:(Math.random()-.5)*30}))});}window.addEventListener('pauseWallpaper',()=>isPlaying=false);window.addEventListener('playWallpaper',()=>{if(!isPlaying){isPlaying=true;draw();}});function draw(){if(!isPlaying)return;ctx.fillStyle='#000505';ctx.fillRect(0,0,w,h);t+=0.02;const speed=5+Math.sin(t*.4)*1.2;const rot=window.rotationData||{beta:0,gamma:0};const scroll=window.scrollOffset||.5;const tiltX=rot.gamma*8+(scroll-.5)*w*1.8;const tiltY=rot.beta*5;const horizon=h*.58+tiltY;const skyGrad=ctx.createLinearGradient(0,0,0,horizon);skyGrad.addColorStop(0,'#000c14');skyGrad.addColorStop(.7,'#011e1a');skyGrad.addColorStop(1,'#022d25');ctx.fillStyle=skyGrad;ctx.fillRect(0,0,w,horizon);ctx.beginPath();const moonX=w*.7+tiltX*.2,moonY=h*.15+tiltY*.3;const moonG=ctx.createRadialGradient(moonX,moonY,0,moonX,moonY,120);moonG.addColorStop(0,'rgba(230, 255, 240, 0.15)');moonG.addColorStop(1,'rgba(0, 0, 0, 0)');ctx.fillStyle=moonG;ctx.arc(moonX,moonY,120,0,Math.PI*2);ctx.fill();ctx.fillStyle='rgba(255, 255, 240, 0.8)';ctx.beginPath();ctx.arc(moonX,moonY,25,0,Math.PI*2);ctx.fill();segments.forEach(s=>{s.z-=speed;if(s.z<-segLen)s.z+=(segCount*segLen);});const sorted=[...segments].sort((a,b)=>b.z-a.z);sorted.forEach(s=>{if(s.z<10)return;const f=800/(800+s.z);const curve=Math.sin(s.z*.0025+t)*450;const cx=w/2+tiltX*f+curve*f;const y=horizon+(s.z*.22*f);const rw=150*f;const roadG=ctx.createLinearGradient(cx-rw,0,cx+rw,0);roadG.addColorStop(0,'#050804');roadG.addColorStop(.5,'#0d140a');roadG.addColorStop(1,'#050804');ctx.fillStyle=roadG;ctx.beginPath();ctx.moveTo(cx-rw,y);ctx.lineTo(cx+rw,y);const nextF=800/(800+s.z+segLen);const nextC=Math.sin((s.z+segLen)*.0025+t)*450;const ncx=w/2+tiltX*nextF+nextC*nextF;const ny=horizon+((s.z+segLen)*.22*nextF);const nrw=150*nextF;ctx.lineTo(ncx+nrw,ny);ctx.lineTo(ncx-nrw,ny);ctx.fill();s.trees.forEach(tr=>{const tx=cx+(tr.dist*tr.side)*f+tr.o*f;const th=tr.h*f;const tw=tr.w*f;const treeG=ctx.createLinearGradient(tx-tw,0,tx+tw,0);treeG.addColorStop(0,'#010301');treeG.addColorStop(.5,'#040a04');treeG.addColorStop(1,'#010301');ctx.fillStyle=treeG;for(let l=0;l<4;l++){const yOff=y-(l*th*.3);const lw=tw*(1-l*.22);ctx.beginPath();ctx.moveTo(tx-lw,yOff);ctx.lineTo(tx,yOff-th*.7);ctx.lineTo(tx+lw,yOff);ctx.fill();}});const fog=Math.max(0,Math.min(1,(s.z-300)/1800));ctx.fillStyle=\`rgba(0, 5, 5, \${fog})\`;ctx.fillRect(0,ny-h,w,h*2);});ctx.fillStyle='#e1f071';flies.forEach(f=>{f.z-=speed*.4;f.x+=f.vx;f.y+=f.vy;if(f.z<0){f.z+=2000;f.x=Math.random()*2000-1000;f.y=Math.random()*-800;}if(f.x>1200)f.x=-1200;else if(f.x<-1200)f.x=1200;const scale=800/(800+f.z);const px=w/2+f.x*scale+tiltX*scale;const py=horizon-200*scale+f.y*scale+tiltY*scale;ctx.globalAlpha=Math.max(0,1-f.z/1900)*(.4+Math.sin(t*10+f.x)*.6);ctx.beginPath();ctx.arc(px,py,f.s*scale,0,Math.PI*2);ctx.fill();});ctx.globalAlpha=1;const beam=ctx.createRadialGradient(w/2,h*.95,20,w/2+tiltX*.4,h*.4+tiltY,w);beam.addColorStop(0,'rgba(200, 255, 180, 0.08)');beam.addColorStop(.6,'rgba(100, 200, 150, 0.02)');beam.addColorStop(1,'rgba(0, 0, 0, 0)');ctx.fillStyle=beam;ctx.fillRect(0,0,w,h);requestAnimationFrame(draw);}draw();</script></body></html>`
+
+const AVIATOR_3D_CODE = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><style>body,html{margin:0;padding:0;width:100%;height:100%;background:#f7d9aa;overflow:hidden}#world{position:absolute;width:100%;height:100%;overflow:hidden;z-index:1}canvas{position:absolute;top:0;left:0;width:100vw!important;height:100vh!important;z-index:99!important;display:block}</style><script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r75/three.min.js"><\/script></head><body><div id="world"></div><script>var Colors={red:0xf25346,yellow:0xedeb27,white:0xd8d0d1,brown:0x59332e,pink:0xF5986E,brownDark:0x23190f,blue:0x68c3c0,green:0x458248,purple:0x551A8B,lightgreen:0x629265};var scene,camera,fieldOfView,aspectRatio,nearPlane,farPlane,HEIGHT,WIDTH,renderer,container;var isPlaying=true;function createScene(){HEIGHT=window.innerHeight||1000;WIDTH=window.innerWidth||500;scene=new THREE.Scene();scene.fog=new THREE.Fog(0xf7d9aa,100,950);aspectRatio=WIDTH/HEIGHT;fieldOfView=60;nearPlane=1;farPlane=10000;camera=new THREE.PerspectiveCamera(fieldOfView,aspectRatio,nearPlane,farPlane);camera.position.x=0;camera.position.y=150;camera.position.z=100;renderer=new THREE.WebGLRenderer({alpha:true,antialias:false,preserveDrawingBuffer:true});renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.5));renderer.setSize(WIDTH,HEIGHT);renderer.shadowMap.enabled=true;container=document.getElementById("world");container.appendChild(renderer.domElement);window.addEventListener("resize",handleWindowResize,false)}function handleWindowResize(){HEIGHT=window.innerHeight;WIDTH=window.innerWidth;renderer.setSize(WIDTH,HEIGHT);camera.aspect=WIDTH/HEIGHT;camera.updateProjectionMatrix()}var hemisphereLight,shadowLight;function createLights(){hemisphereLight=new THREE.HemisphereLight(0xaaaaaa,0x000000,.9);shadowLight=new THREE.DirectionalLight(0xffffff,.9);shadowLight.position.set(0,350,350);shadowLight.castShadow=true;shadowLight.shadow.camera.left=-650;shadowLight.shadow.camera.right=650;shadowLight.shadow.camera.top=650;shadowLight.shadow.camera.bottom=-650;shadowLight.shadow.camera.near=1;shadowLight.shadow.camera.far=1000;shadowLight.shadow.mapSize.width=1024;shadowLight.shadow.mapSize.height=1024;scene.add(hemisphereLight);scene.add(shadowLight)}var Land=function(){var geom=new THREE.CylinderGeometry(600,600,1700,40,10);geom.applyMatrix(new THREE.Matrix4().makeRotationX(-Math.PI/2));var mat=new THREE.MeshPhongMaterial({color:Colors.lightgreen,shading:THREE.FlatShading});this.mesh=new THREE.Mesh(geom,mat);this.mesh.receiveShadow=true};var Orbit=function(){this.mesh=new THREE.Object3D()};var Sun=function(){this.mesh=new THREE.Object3D();var sunGeom=new THREE.SphereGeometry(400,20,10);var sunMat=new THREE.MeshPhongMaterial({color:Colors.yellow,shading:THREE.FlatShading});var sun=new THREE.Mesh(sunGeom,sunMat);sun.castShadow=false;sun.receiveShadow=false;this.mesh.add(sun)};var Cloud=function(){this.mesh=new THREE.Object3D();var geom=new THREE.DodecahedronGeometry(20,0);var mat=new THREE.MeshPhongMaterial({color:Colors.white});var nBlocs=3+Math.floor(Math.random()*3);for(var i=0;i<nBlocs;i++){var m=new THREE.Mesh(geom,mat);m.position.x=i*15;m.position.y=Math.random()*10;m.position.z=Math.random()*10;m.rotation.z=Math.random()*Math.PI*2;m.rotation.y=Math.random()*Math.PI*2;var s=.1+Math.random()*.9;m.scale.set(s,s,s);this.mesh.add(m)}};var Sky=function(){this.mesh=new THREE.Object3D();this.nClouds=25;var stepAngle=Math.PI*2/this.nClouds;for(var i=0;i<this.nClouds;i++){var c=new Cloud();var a=stepAngle*i;var h=800+Math.random()*200;c.mesh.position.y=Math.sin(a)*h;c.mesh.position.x=Math.cos(a)*h;c.mesh.rotation.z=a+Math.PI/2;c.mesh.position.z=-400-Math.random()*400;var s=1+Math.random()*2;c.mesh.scale.set(s,s,s);this.mesh.add(c.mesh)}};var Tree=function(){this.mesh=new THREE.Object3D();var matTreeLeaves=new THREE.MeshPhongMaterial({color:Colors.green,shading:THREE.FlatShading});var geonTreeBase=new THREE.BoxGeometry(10,20,10);var matTreeBase=new THREE.MeshBasicMaterial({color:Colors.brown});var treeBase=new THREE.Mesh(geonTreeBase,matTreeBase);treeBase.castShadow=true;treeBase.receiveShadow=true;this.mesh.add(treeBase);var geomTreeLeaves1=new THREE.CylinderGeometry(1,36,36,4);var treeLeaves1=new THREE.Mesh(geomTreeLeaves1,matTreeLeaves);treeLeaves1.castShadow=true;treeLeaves1.receiveShadow=true;treeLeaves1.position.y=20;this.mesh.add(treeLeaves1);var geomTreeLeaves2=new THREE.CylinderGeometry(1,27,27,4);var treeLeaves2=new THREE.Mesh(geomTreeLeaves2,matTreeLeaves);treeLeaves2.castShadow=true;treeLeaves2.receiveShadow=true;treeLeaves2.position.y=40;this.mesh.add(treeLeaves2);var geomTreeLeaves3=new THREE.CylinderGeometry(1,18,18,4);var treeLeaves3=new THREE.Mesh(geomTreeLeaves3,matTreeLeaves);treeLeaves3.castShadow=true;treeLeaves3.receiveShadow=true;treeLeaves3.position.y=55;this.mesh.add(treeLeaves3)};var petalColors=[Colors.red,Colors.yellow,Colors.blue];var Flower=function(){this.mesh=new THREE.Object3D();var geomStem=new THREE.BoxGeometry(5,50,5,1,1,1);var matStem=new THREE.MeshPhongMaterial({color:Colors.green,shading:THREE.FlatShading});var stem=new THREE.Mesh(geomStem,matStem);stem.castShadow=false;stem.receiveShadow=true;this.mesh.add(stem);var geomPetalCore=new THREE.BoxGeometry(10,10,10,1,1,1);var matPetalCore=new THREE.MeshPhongMaterial({color:Colors.yellow,shading:THREE.FlatShading});var petalCore=new THREE.Mesh(geomPetalCore,matPetalCore);petalCore.castShadow=false;petalCore.receiveShadow=true;var petalColor=petalColors[Math.floor(Math.random()*3)];var geomPetal=new THREE.BoxGeometry(15,20,5,1,1,1);var matPetal=new THREE.MeshBasicMaterial({color:petalColor});geomPetal.vertices[5].y-=4;geomPetal.vertices[4].y-=4;geomPetal.vertices[7].y+=4;geomPetal.vertices[6].y+=4;geomPetal.translate(12.5,0,3);var petals=[];for(var i=0;i<4;i++){petals[i]=new THREE.Mesh(geomPetal,matPetal);petals[i].rotation.z=i*Math.PI/2;petals[i].castShadow=true;petals[i].receiveShadow=true}petalCore.add(petals[0],petals[1],petals[2],petals[3]);petalCore.position.y=25;petalCore.position.z=3;this.mesh.add(petalCore)};var Forest=function(){this.mesh=new THREE.Object3D();this.nTrees=60;var stepAngle=Math.PI*2/this.nTrees;for(var i=0;i<this.nTrees;i++){var t=new Tree();var a=stepAngle*i;var h=605;t.mesh.position.y=Math.sin(a)*h;t.mesh.position.x=Math.cos(a)*h;t.mesh.rotation.z=a+(Math.PI/2)*3;t.mesh.position.z=0-Math.random()*600;var s=.3+Math.random()*.75;t.mesh.scale.set(s,s,s);this.mesh.add(t.mesh)}this.nFlowers=60;var stepAngle=Math.PI*2/this.nFlowers;for(var i=0;i<this.nFlowers;i++){var f=new Flower();var a=stepAngle*i;var h=605;f.mesh.position.y=Math.sin(a)*h;f.mesh.position.x=Math.cos(a)*h;f.mesh.rotation.z=a+(Math.PI/2)*3;f.mesh.position.z=0-Math.random()*600;var s=.1+Math.random()*.3;f.mesh.scale.set(s,s,s);this.mesh.add(f.mesh)}};var AirPlane=function(){this.mesh=new THREE.Object3D();var geomCockpit=new THREE.BoxGeometry(80,50,50,1,1,1);var matCockpit=new THREE.MeshPhongMaterial({color:Colors.red,shading:THREE.FlatShading});geomCockpit.vertices[4].y-=10;geomCockpit.vertices[4].z+=20;geomCockpit.vertices[5].y-=10;geomCockpit.vertices[5].z-=20;geomCockpit.vertices[6].y+=30;geomCockpit.vertices[6].z+=20;geomCockpit.vertices[7].y+=30;geomCockpit.vertices[7].z-=20;var cockpit=new THREE.Mesh(geomCockpit,matCockpit);cockpit.castShadow=true;cockpit.receiveShadow=true;this.mesh.add(cockpit);var geomEngine=new THREE.BoxGeometry(20,50,50,1,1,1);var matEngine=new THREE.MeshPhongMaterial({color:Colors.white,shading:THREE.FlatShading});var engine=new THREE.Mesh(geomEngine,matEngine);engine.position.x=40;engine.castShadow=true;engine.receiveShadow=true;this.mesh.add(engine);var geomTailPlane=new THREE.BoxGeometry(15,20,5,1,1,1);var matTailPlane=new THREE.MeshPhongMaterial({color:Colors.red,shading:THREE.FlatShading});var tailPlane=new THREE.Mesh(geomTailPlane,matTailPlane);tailPlane.position.set(-35,25,0);tailPlane.castShadow=true;tailPlane.receiveShadow=true;this.mesh.add(tailPlane);var geomSideWing=new THREE.BoxGeometry(40,4,150,1,1,1);var matSideWing=new MeshPhongMaterial({color:Colors.red,shading:THREE.FlatShading});var sideWingTop=new THREE.Mesh(geomSideWing,matSideWing);var sideWingBottom=new THREE.Mesh(geomSideWing,matSideWing);sideWingTop.castShadow=true;sideWingTop.receiveShadow=true;sideWingBottom.castShadow=true;sideWingBottom.receiveShadow=true;sideWingTop.position.set(20,12,0);sideWingBottom.position.set(20,-3,0);this.mesh.add(sideWingTop);this.mesh.add(sideWingBottom);var geomWindshield=new THREE.BoxGeometry(3,15,20,1,1,1);var matWindshield=new THREE.MeshPhongMaterial({color:Colors.white,transparent:true,opacity:.3,shading:THREE.FlatShading});var windshield=new THREE.Mesh(geomWindshield,matWindshield);windshield.position.set(5,27,0);windshield.castShadow=true;windshield.receiveShadow=true;this.mesh.add(windshield);var geomPropeller=new THREE.BoxGeometry(20,10,10,1,1,1);geomPropeller.vertices[4].y-=5;geomPropeller.vertices[4].z+=5;geomPropeller.vertices[5].y-=5;geomPropeller.vertices[5].z-=5;geomPropeller.vertices[6].y+=5;geomPropeller.vertices[6].z+=5;geomPropeller.vertices[7].y+=5;geomPropeller.vertices[7].z-=5;var matPropeller=new THREE.MeshPhongMaterial({color:Colors.brown,shading:THREE.FlatShading});this.propeller=new THREE.Mesh(geomPropeller,matPropeller);this.propeller.castShadow=true;this.propeller.receiveShadow=true;var geomBlade1=new THREE.BoxGeometry(1,100,10,1,1,1);var geomBlade2=new THREE.BoxGeometry(1,10,100,1,1,1);var matBlade=new THREE.MeshPhongMaterial({color:Colors.brownDark,shading:THREE.FlatShading});var blade1=new THREE.Mesh(geomBlade1,matBlade);blade1.position.set(8,0,0);blade1.castShadow=true;blade1.receiveShadow=true;var blade2=new THREE.Mesh(geomBlade2,matBlade);blade2.position.set(8,0,0);blade2.castShadow=true;blade2.receiveShadow=true;this.propeller.add(blade1,blade2);this.propeller.position.set(50,0,0);this.mesh.add(this.propeller);var wheelProtecGeom=new THREE.BoxGeometry(30,15,10,1,1,1);var wheelProtecMat=new THREE.MeshPhongMaterial({color:Colors.white,shading:THREE.FlatShading});var wheelProtecR=new THREE.Mesh(wheelProtecGeom,wheelProtecMat);wheelProtecR.position.set(25,-20,25);this.mesh.add(wheelProtecR);var wheelTireGeom=new THREE.BoxGeometry(24,24,4);var wheelTireMat=new THREE.MeshPhongMaterial({color:Colors.brownDark,shading:THREE.FlatShading});var wheelTireR=new THREE.Mesh(wheelTireGeom,wheelTireMat);wheelTireR.position.set(25,-28,25);var wheelAxisGeom=new THREE.BoxGeometry(10,10,6);var wheelAxisMat=new THREE.MeshPhongMaterial({color:Colors.brown,shading:THREE.FlatShading});var wheelAxis=new THREE.Mesh(wheelAxisGeom,wheelAxisMat);wheelTireR.add(wheelAxis);this.mesh.add(wheelTireR);var wheelProtecL=wheelProtecR.clone();wheelProtecL.position.z=-wheelProtecR.position.z;this.mesh.add(wheelProtecL);var wheelTireL=wheelTireR.clone();wheelTireL.position.z=-wheelTireR.position.z;this.mesh.add(wheelTireL);var wheelTireB=wheelTireR.clone();wheelTireB.scale.set(.5,.5,.5);wheelTireB.position.set(-35,-5,0);this.mesh.add(wheelTireB);var suspensionGeom=new THREE.BoxGeometry(4,20,4);suspensionGeom.applyMatrix(new THREE.Matrix4().makeTranslation(0,10,0));var suspensionMat=new THREE.MeshPhongMaterial({color:Colors.red,shading:THREE.FlatShading});var suspension=new THREE.Mesh(suspensionGeom,suspensionMat);suspension.position.set(-35,-5,0);suspension.rotation.z=-.3;this.mesh.add(suspension)};var sky,forest,land,orbit,airplane,sun;var mousePos={x:0,y:0};var offSet=-600;function createSky(){sky=new Sky();sky.mesh.position.y=offSet;scene.add(sky.mesh)}function createLand(){land=new Land();land.mesh.position.y=offSet;scene.add(land.mesh)}function createOrbit(){orbit=new Orbit();orbit.mesh.position.y=offSet;orbit.mesh.rotation.z=-Math.PI/6;scene.add(orbit.mesh)}function createForest(){forest=new Forest();forest.mesh.position.y=offSet;scene.add(forest.mesh)}function createSun(){sun=new Sun();sun.mesh.scale.set(1,1,.3);sun.mesh.position.set(0,-30,-850);scene.add(sun.mesh)}function createPlane(){airplane=new AirPlane();airplane.mesh.scale.set(.35,.35,.35);airplane.mesh.position.set(-40,110,-250);scene.add(airplane.mesh)}function updatePlane(){var targetY=normalize(mousePos.y,-.75,.75,50,190);var targetX=normalize(mousePos.x,-.75,.75,-100,-20);airplane.mesh.position.y+=(targetY-airplane.mesh.position.y)*0.05;airplane.mesh.position.x+=(targetX-airplane.mesh.position.x)*0.05;airplane.mesh.rotation.z=(targetY-airplane.mesh.position.y)*0.0128;airplane.mesh.rotation.x=(airplane.mesh.position.y-targetY)*0.0064;airplane.mesh.rotation.y=(airplane.mesh.position.x-targetX)*0.0064;airplane.propeller.rotation.x+=0.15}function normalize(v,vmin,vmax,tmin,tmax){var nv=Math.max(Math.min(v,vmax),vmin);var dv=vmax-vmin;var pc=(nv-vmin)/dv;var dt=tmax-tmin;return tmin+(pc*dt)}function loop(){if(!isPlaying)return;land.mesh.rotation.z+=.002;orbit.mesh.rotation.z+=.0005;sky.mesh.rotation.z+=.001;forest.mesh.rotation.z+=.002;updatePlane();renderer.render(scene,camera);requestAnimationFrame(loop)}function handlePointerMove(event){var clientX=event.touches?event.touches[0].clientX:event.clientX;var clientY=event.touches?event.touches[0].clientY:event.clientY;var tx=-1+(clientX/WIDTH)*2;var ty=1-(clientY/HEIGHT)*2;mousePos={x:tx,y:ty}}function init(){createScene();createLights();createPlane();createOrbit();createSun();createLand();createForest();createSky();document.addEventListener("mousemove",handlePointerMove,false);document.addEventListener("touchmove",handlePointerMove,{passive:true});document.addEventListener("touchstart",handlePointerMove,{passive:true});window.addEventListener("pauseWallpaper",()=>isPlaying=false);window.addEventListener("playWallpaper",()=>{if(!isPlaying){isPlaying=true;loop()}});loop()}window.addEventListener("load",()=>{setTimeout(init,500);},false);<\/script></body></html>`;
+
+// Then, add it to your MOCK_WALLPAPERS array:
+/*
+  {
+    _id: 'html_aviator',
+    url: 'https://images.unsplash.com/photo-1517482811403-125032338167?q=80&w=1080', // Replace with a nice cartoon sky image
+    thumbnail: 'https://images.unsplash.com/photo-1517482811403-125032338167?q=80&w=400',
+    author: 'Toss Studio',
+    type: 'interactive',
+    category: { id: 'live', name: { en: 'Interactive' } },
+    indexCode: AVIATOR_3D_CODE 
+  },
+*/
+
 export const MOCK_CATEGORIES: Category[] = [
   {
-    id: 'chill_mode_cat',
-    name: { en: 'Chill Mode', hi: 'चिल मोड', ja: 'チルモード', fr: 'Mode Détente' },
-    title: 'Chill Mode',
-    image: 'https://images.unsplash.com/photo-1518091044184-21f44c6ef94b?q=80&w=2070&auto=format&fit=crop',
-    count: '1',
-    type: 'main'
+    id: 'live',
+    name: { en: 'Interactive', hi: 'इंटरएक्टिव', ja: 'インタラクティブ', fr: 'Interactif' },
+    title: 'Live & Interactive',
+    image: 'https://images.unsplash.com/photo-1579546929662-711aa81148cf?q=80&w=2000',
+    count: '5 New',
+    type: 'live'
   },
   {
     id: 'abstract',
@@ -37,12 +65,49 @@ export const MOCK_CATEGORIES: Category[] = [
 
 export const MOCK_WALLPAPERS: Wallpaper[] = [
   {
+    _id: 'html_aviator',
+    url: 'https://images.unsplash.com/photo-1517482811403-125032338167?q=80&w=1080', // Replace with a nice cartoon sky image
+    thumbnail: 'https://images.unsplash.com/photo-1517482811403-125032338167?q=80&w=400',
+    author: 'Toss Studio',
+    type: 'interactive',
+    category: { id: 'live', name: { en: 'Interactive' } },
+    indexCode: AVIATOR_3D_CODE
+  },
+  {
+    _id: 'html_cosmos_3d',
+    url: 'https://images.unsplash.com/photo-1462331940025-496dfbfc7564?q=80&w=1080',
+    thumbnail: 'https://images.unsplash.com/photo-1462331940025-496dfbfc7564?q=80&w=400',
+    author: 'Cosmic Dev',
+    type: 'interactive',
+    category: { id: 'live', name: { en: 'Cosmos 3D' } },
+    indexCode: COSMOS_CODE
+  },
+  {
+    _id: 'html_aether_drift',
+    url: 'https://images.unsplash.com/photo-1579546929662-711aa81148cf?q=80&w=1080',
+    thumbnail: 'https://images.unsplash.com/photo-1579546929662-711aa81148cf?q=80&w=400',
+    author: 'Toss Studio',
+    type: 'interactive',
+    category: { id: 'live', name: { en: 'Aether Drift' } },
+    indexCode: AETHER_DRIFT_CODE
+  },
+  {
+    _id: 'html_viby',
+    url: 'https://assets.mixkit.co/videos/preview/mixkit-abstract-technology-network-connections-loop-27322-large.mp4',
+    thumbnail: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=400&auto=format&fit=crop',
+    author: 'Toss Studio',
+    type: 'interactive',
+    category: { id: 'live', name: { en: 'Interactive' } },
+    indexCode: VIBY_ORBS_CODE
+  },
+  {
     _id: 'abstract_1',
     url: 'https://picsum.photos/seed/abs1/1080/2400',
     thumbnail: 'https://picsum.photos/seed/abs1/400/800',
     author: 'Abstract Artist',
     type: 'image',
-    category: { id: 'abstract', name: { en: 'Abstract' } }
+    category: { id: 'abstract', name: { en: 'Abstract' } },
+    indexCode: null
   },
   {
     _id: 'abstract_2',
@@ -50,7 +115,8 @@ export const MOCK_WALLPAPERS: Wallpaper[] = [
     thumbnail: 'https://picsum.photos/seed/abs2/400/800',
     author: 'Digital Guru',
     type: 'image',
-    category: { id: 'abstract', name: { en: 'Abstract' } }
+    category: { id: 'abstract', name: { en: 'Abstract' } },
+    indexCode: null
   },
   {
     _id: 'nature_1',
@@ -58,7 +124,8 @@ export const MOCK_WALLPAPERS: Wallpaper[] = [
     thumbnail: 'https://picsum.photos/seed/nat1/400/800',
     author: 'Nature Lover',
     type: 'image',
-    category: { id: 'nature', name: { en: 'Nature' } }
+    category: { id: 'nature', name: { en: 'Nature' } },
+    indexCode: null
   },
   {
     _id: 'nature_2',
@@ -66,7 +133,8 @@ export const MOCK_WALLPAPERS: Wallpaper[] = [
     thumbnail: 'https://picsum.photos/seed/nat2/400/800',
     author: 'Eco Warrior',
     type: 'image',
-    category: { id: 'nature', name: { en: 'Nature' } }
+    category: { id: 'nature', name: { en: 'Nature' } },
+    indexCode: null
   },
   {
     _id: 'urban_1',
@@ -74,7 +142,8 @@ export const MOCK_WALLPAPERS: Wallpaper[] = [
     thumbnail: 'https://picsum.photos/seed/urb1/400/800',
     author: 'City Slicker',
     type: 'image',
-    category: { id: 'urban', name: { en: 'Urban' } }
+    category: { id: 'urban', name: { en: 'Urban' } },
+    indexCode: null
   },
   {
     _id: 'urban_2',
@@ -82,10 +151,28 @@ export const MOCK_WALLPAPERS: Wallpaper[] = [
     thumbnail: 'https://picsum.photos/seed/urb2/400/800',
     author: 'Modernist',
     type: 'image',
-    category: { id: 'urban', name: { en: 'Urban' } }
+    category: { id: 'urban', name: { en: 'Urban' } },
+    indexCode: null
+  },
+  {
+    _id: 'html_wild_ranger',
+    url: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?q=80&w=1080',
+    thumbnail: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?q=80&w=400',
+    author: 'Toss Studio',
+    type: 'interactive',
+    category: { id: 'live', name: { en: 'The Wild Ranger' } },
+    indexCode: WILD_RANGER_CODE
+  },
+  {
+    _id: 'html_neural_flow',
+    url: 'https://images.unsplash.com/photo-1614850523296-d8c1af93d400?q=80&w=1080',
+    thumbnail: 'https://images.unsplash.com/photo-1614850523296-d8c1af93d400?q=80&w=400',
+    author: 'Toss Studio',
+    type: 'interactive',
+    category: { id: 'live', name: { en: 'Interactive' } },
+    indexCode: NEURAL_FLOW_CODE
   },
 ];
 
-// For backward compatibility until imageService is updated
 export const CATEGORIES = MOCK_CATEGORIES;
 export const MOCK_IMAGES = MOCK_WALLPAPERS.map(w => ({ id: w._id, url: w.url, author: w.author }));

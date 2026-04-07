@@ -1,16 +1,15 @@
+import CategoryCard from '@/components/CategoryCard';
 import CustomButton from '@/components/CustomButton';
 import CustomText from '@/components/CustomText';
-import CategoryCard from '@/components/CategoryCard';
 import { commonStyles } from '@/constants/commonStyles';
 import { useTheme } from '@/hooks/useTheme';
-import { CATEGORIES } from '@/services/mockData';
-import { Category } from '@/types';
-import { useRouter } from 'expo-router';
-import { ScrollView, StyleSheet, View, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useTranslation } from 'react-i18next';
 import { fetchHomeCategories, getCachedCategories } from '@/services/categoryService';
+import { Category } from '@/types';
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { ActivityIndicator, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -48,17 +47,13 @@ export default function HomeScreen() {
   }, [i18n.language]);
 
   const handleCategoryPress = (category: Category) => {
-    if (category.id === 'chill_mode_cat') {
-      router.push('/chill-mode');
-      return;
-    }
 
-    router.push({ 
-      pathname: '/preview', 
-      params: { 
+    router.push({
+      pathname: '/preview',
+      params: {
         category: typeof category.name === 'string' ? category.name : category.title || '',
-        categoryId: category.id 
-      } 
+        categoryId: category.id
+      }
     });
   };
 

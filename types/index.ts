@@ -10,7 +10,7 @@ export interface Category {
   name?: string | { [key: string]: string };
   image: any;
   count: string;
-  type?: 'image' | 'video' | 'main' | 'sub';
+  type?: 'image' | 'video' | 'main' | 'sub' | 'live';
 }
 
 export interface Wallpaper {
@@ -18,8 +18,9 @@ export interface Wallpaper {
   url: string;
   thumbnail: string;
   author: string;
-  type: 'image' | 'video' | 'interactive';
+  type: 'image' | 'video' | 'interactive' | 'live';
   category: any;
+  indexCode: string | null;
 }
 
 export type ThemeVariant = 'light' | 'dark';

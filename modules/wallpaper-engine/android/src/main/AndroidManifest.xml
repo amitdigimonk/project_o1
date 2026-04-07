@@ -1,5 +1,7 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
   package="com.tossstudio.wallpaperengine">
+  
+  <uses-permission android:name="android.permission.INTERNET" />
+  <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
   <application>
 
@@ -10,7 +12,7 @@
       "HtmlWallpaperPrefs" by WallpaperEngineModule.saveHtmlWallpaperPath().
     -->
     <service
-        android:name=".HtmlWallpaperService"
+        android:name="com.tossstudio.HtmlWallpaperService"
         android:label="HTML5 Wallpaper"
         android:permission="android.permission.BIND_WALLPAPER"
         android:exported="true">

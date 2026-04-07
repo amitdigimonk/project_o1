@@ -1,36 +1,15 @@
 import { Colors } from '@/constants/Colors';
-import { syncChillSettings } from '@/modules/wallpaper-engine/src';
+
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 import { useColorScheme } from 'react-native';
 
 // --- Types ---
-export type WeatherType = 'clear' | 'partlyCloudy' | 'cloudy' | 'rain' | 'snow' | 'thunder' | 'storm' | 'fog' | 'haze' | 'random';
-export type SeasonType = 'spring' | 'summer' | 'autumn' | 'winter' | 'random';
 export type ThemeMode = 'light' | 'dark' | 'system';
 
 // --- Combined Interface ---
 export interface SettingsState {
-    // Weather & Location
-    liveLocation: boolean;
-    setLiveLocation: (val: boolean) => void;
-    dynamicWeather: boolean;
-    setDynamicWeather: (val: boolean) => void;
-    autoSeason: boolean;
-    setAutoSeason: (val: boolean) => void;
-    liveTime: boolean;
-    setLiveTime: (val: boolean) => void;
-    manualTime: number;
-    setManualTime: (val: number) => void;
-    weatherRefreshRate: string;
-    setWeatherRefreshRate: (val: string) => void;
-    weatherOverride: WeatherType;
-    setWeatherOverride: (val: WeatherType) => void;
-    seasonOverride: SeasonType;
-    setSeasonOverride: (val: SeasonType) => void;
-    windSpeed: number;
-    setWindSpeed: (val: number) => void;
-    isWallpaperMode: boolean;
+
 
     // Theme & App Settings
     themeMode: ThemeMode;
@@ -49,36 +28,16 @@ export interface SettingsState {
 const SettingsContext = createContext<SettingsState | undefined>(undefined);
 
 // --- Provider ---
-export const SettingsProvider = ({ children, isWallpaper }: { children: ReactNode, isWallpaper?: boolean }) => {
+export const SettingsProvider = ({ children }: { children: ReactNode }) => {
     const systemColorScheme = useColorScheme();
 
-    // 1. Weather & Location States
-    const [liveLocation, setLiveLocation] = useState(false);
-    const [dynamicWeather, setDynamicWeather] = useState(false);
-    const [autoSeason, setAutoSeason] = useState(true);
-    const [liveTime, setLiveTime] = useState(true);
-    const [manualTime, setManualTime] = useState(12);
-    const [weatherRefreshRate, setWeatherRefreshRate] = useState('1h');
-    const [weatherOverride, setWeatherOverride] = useState<WeatherType>('clear');
-    const [seasonOverride, setSeasonOverride] = useState<SeasonType>('spring');
-    const [windSpeed, setWindSpeed] = useState(0.0225);
-    const [isWallpaperMode] = useState(!!isWallpaper);
-
-    // 2. Theme & App Settings States
+    // Theme & App Settings States
     const [themeMode, setThemeMode] = useState<ThemeMode>('system');
     const [notificationsEnabled, setNotificationsEnabled] = useState(true);
     const [lockScreenCategories, setLockScreenCategories] = useState<string[]>([]);
     const [eventsEnabled, setEventsEnabled] = useState(true);
 
 
-    useEffect(() => {
-        syncChillSettings({
-            weatherOverride,
-            seasonOverride,
-            liveTime,
-            manualTime
-        });
-    }, [weatherOverride, seasonOverride, liveTime, manualTime]);
 
     // --- Effects for Storage ---
     useEffect(() => {
@@ -138,17 +97,6 @@ export const SettingsProvider = ({ children, isWallpaper }: { children: ReactNod
     return (
         <SettingsContext.Provider
             value={{
-                // Weather & Location
-                liveLocation, setLiveLocation,
-                dynamicWeather, setDynamicWeather,
-                autoSeason, setAutoSeason,
-                liveTime, setLiveTime,
-                manualTime, setManualTime,
-                weatherRefreshRate, setWeatherRefreshRate,
-                weatherOverride, setWeatherOverride,
-                seasonOverride, setSeasonOverride,
-                windSpeed, setWindSpeed,
-                isWallpaperMode,
 
                 // Theme & App Settings
                 themeMode, setThemeMode,

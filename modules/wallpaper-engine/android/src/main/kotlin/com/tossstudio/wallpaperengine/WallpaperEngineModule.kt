@@ -11,23 +11,12 @@ import expo.modules.kotlin.Promise
 import java.net.HttpURLConnection
 import java.net.URL
 import kotlin.concurrent.thread
+import com.tossstudio.HtmlWallpaperService
 
 class WallpaperEngineModule : Module() {
   override fun definition() = ModuleDefinition {
     Name("WallpaperEngine")
 
-    // The Native View Manager binding for React Native
-    View(ChillBackgroundView::class) {
-      Prop("manualTime") { view: ChillBackgroundView, prop: Float -> 
-          view.manualTime = prop 
-      }
-      Prop("isLiveTime") { view: ChillBackgroundView, prop: Boolean -> 
-          view.isLiveTime = prop 
-      }
-      Prop("weatherOverride") { view: ChillBackgroundView, prop: String -> 
-          view.weatherOverride = prop 
-      }
-    }
 
     AsyncFunction("setWallpaper") { imageUrl: String, location: String, promise: Promise ->
       val context = appContext.reactContext
@@ -40,11 +29,20 @@ class WallpaperEngineModule : Module() {
           val wallpaperManager = WallpaperManager.getInstance(context)
           val url = URL(imageUrl)
           val connection = url.openConnection() as HttpURLConnection
+          connection.connectTimeout = 5000
+          connection.readTimeout = 5000
           connection.doInput = true
           connection.connect()
           
+          if (connection.responseCode != HttpURLConnection.HTTP_OK) {
+             throw Exception("Server returned HTTP ${connection.responseCode}: ${connection.responseMessage}")
+          }
+
           val input = connection.inputStream
           val bitmap = BitmapFactory.decodeStream(input)
+          if (bitmap == null) {
+             throw Exception("Failed to decode bitmap from stream")
+          }
 
           val flag = when (location.uppercase()) {
             "HOME" -> WallpaperManager.FLAG_SYSTEM
@@ -56,6 +54,7 @@ class WallpaperEngineModule : Module() {
           wallpaperManager.setBitmap(bitmap, null, true, flag)
           promise.resolve(true)
         } catch (e: Exception) {
+          e.printStackTrace()
           promise.reject("ERR_WALLPAPER", "Failed to set wallpaper: ${e.message}", e)
         }
       }
@@ -65,10 +64,8 @@ class WallpaperEngineModule : Module() {
       val context = appContext.reactContext ?: return@Function false
       try {
         val intent = Intent(WallpaperManager.ACTION_CHANGE_LIVE_WALLPAPER)
-        val componentName = ComponentName(
-            context.packageName,
-            "com.tossstudio.wallpaperengine.$serviceName"
-        )
+        val pkgName = context.packageName
+        val componentName = ComponentName(pkgName, "$pkgName.$serviceName")
         intent.putExtra(WallpaperManager.EXTRA_LIVE_WALLPAPER_COMPONENT, componentName)
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         context.startActivity(intent)
@@ -79,22 +76,6 @@ class WallpaperEngineModule : Module() {
       }
     }
 
-    Function("syncChillSettings") { settings: Map<String, Any> ->
-      val context = appContext.reactContext ?: return@Function
-
-      val prefs = context.getSharedPreferences("ChillWallpaperPrefs", Context.MODE_PRIVATE)
-
-      prefs.edit().apply {
-          putString("weatherOverride", settings["weatherOverride"] as? String ?: "clear")
-          putString("seasonOverride", settings["seasonOverride"] as? String ?: "spring")
-          putBoolean("liveTime", settings["liveTime"] as? Boolean ?: true)
-
-          val manualTimeNum = settings["manualTime"] as? Number
-          putFloat("manualTime", manualTimeNum?.toFloat() ?: 12f)
-
-          apply()
-      }
-    }
 
     /**
      * Persists the absolute file:// URL of the unzipped index.html into
@@ -122,13 +103,13 @@ class WallpaperEngineModule : Module() {
     Function("applyHtmlWallpaper") {
       val context = appContext.reactContext ?: return@Function false
       return@Function try {
-        val intent = Intent(WallpaperManager.ACTION_CHANGE_LIVE_WALLPAPER).apply {
-          putExtra(
-            WallpaperManager.EXTRA_LIVE_WALLPAPER_COMPONENT,
-            ComponentName(context.packageName, HtmlWallpaperService::class.java.name)
-          )
-          addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        }
+        val intent = Intent(WallpaperManager.ACTION_CHANGE_LIVE_WALLPAPER)
+        val pkgName = context.packageName
+        // Force the absolute path: [your.package.name].[ClassName]
+        val componentName = ComponentName(pkgName, "$pkgName.HtmlWallpaperService")
+
+        intent.putExtra(WallpaperManager.EXTRA_LIVE_WALLPAPER_COMPONENT, componentName)
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         context.startActivity(intent)
         true
       } catch (e: Exception) {
