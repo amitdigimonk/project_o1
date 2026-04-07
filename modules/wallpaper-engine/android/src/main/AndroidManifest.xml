@@ -1,16 +1,11 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
   package="com.tossstudio.wallpaperengine">
   
   <uses-permission android:name="android.permission.INTERNET" />
   <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+  <uses-permission android:name="android.permission.SET_WALLPAPER" />
 
   <application>
-
-    <!--
-      HtmlWallpaperService — universal WebView-based HTML5/Canvas live wallpaper.
-      All wallpaper content is delivered as .zip files containing index.html and
-      loaded over-the-air. The active file:// path is stored in SharedPreferences
-      "HtmlWallpaperPrefs" by WallpaperEngineModule.saveHtmlWallpaperPath().
-    -->
     <service
         android:name="com.tossstudio.HtmlWallpaperService"
         android:label="HTML5 Wallpaper"
@@ -23,7 +18,5 @@
             android:name="android.service.wallpaper"
             android:resource="@xml/html_wallpaper" />
     </service>
-
   </application>
-
 </manifest>

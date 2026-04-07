@@ -8,29 +8,36 @@ import android.graphics.BitmapFactory
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
 import expo.modules.kotlin.Promise
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.net.HttpURLConnection
 import java.net.URL
-import kotlin.concurrent.thread
 import com.tossstudio.HtmlWallpaperService
 
 class WallpaperEngineModule : Module() {
   override fun definition() = ModuleDefinition {
     Name("WallpaperEngine")
 
-
+    // ── Normal Image Wallpaper (Bulletproof Coroutine Scope) ──
     AsyncFunction("setWallpaper") { imageUrl: String, location: String, promise: Promise ->
       val context = appContext.reactContext
       if (context == null) {
         promise.reject("ERR_CONTEXT", "React Context is null", null)
         return@AsyncFunction
       }
-      thread {
+      
+      // Safely launch a background IO thread
+      CoroutineScope(Dispatchers.IO).launch {
         try {
           val wallpaperManager = WallpaperManager.getInstance(context)
           val url = URL(imageUrl)
           val connection = url.openConnection() as HttpURLConnection
-          connection.connectTimeout = 5000
-          connection.readTimeout = 5000
+          
+          // Anti-Bot Bypass: Servers reject blank Java user-agents.
+          connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Android; Mobile)")
+          connection.connectTimeout = 10000 // Increased timeout for large 4K images
+          connection.readTimeout = 10000
           connection.doInput = true
           connection.connect()
           
@@ -39,10 +46,7 @@ class WallpaperEngineModule : Module() {
           }
 
           val input = connection.inputStream
-          val bitmap = BitmapFactory.decodeStream(input)
-          if (bitmap == null) {
-             throw Exception("Failed to decode bitmap from stream")
-          }
+          val bitmap = BitmapFactory.decodeStream(input) ?: throw Exception("Failed to decode bitmap from stream")
 
           val flag = when (location.uppercase()) {
             "HOME" -> WallpaperManager.FLAG_SYSTEM
@@ -53,12 +57,15 @@ class WallpaperEngineModule : Module() {
 
           wallpaperManager.setBitmap(bitmap, null, true, flag)
           promise.resolve(true)
+          
         } catch (e: Exception) {
           e.printStackTrace()
           promise.reject("ERR_WALLPAPER", "Failed to set wallpaper: ${e.message}", e)
         }
       }
     }
+
+    // ── Live HTML Wallpaper Triggers ──
 
     Function("setInteractiveWallpaper") { serviceName: String ->
       val context = appContext.reactContext ?: return@Function false
@@ -76,13 +83,6 @@ class WallpaperEngineModule : Module() {
       }
     }
 
-
-    /**
-     * Persists the absolute file:// URL of the unzipped index.html into
-     * SharedPreferences so HtmlWallpaperService can read it on (re)start.
-     *
-     * @param path  Full file URL, e.g. "file:///data/user/0/com.tossstudio/files/wallpaper/index.html"
-     */
     Function("saveHtmlWallpaperPath") { path: String ->
       val context = appContext.reactContext ?: return@Function false
       context
@@ -93,20 +93,14 @@ class WallpaperEngineModule : Module() {
       return@Function true
     }
 
-    /**
-     * Fires the system ACTION_CHANGE_LIVE_WALLPAPER intent pre-pointed at
-     * HtmlWallpaperService so the user lands directly on the preview screen.
-     *
-     * Make sure saveHtmlWallpaperPath() has been called first, otherwise the
-     * wallpaper will show the fallback "no wallpaper loaded" page.
-     */
     Function("applyHtmlWallpaper") {
       val context = appContext.reactContext ?: return@Function false
       return@Function try {
         val intent = Intent(WallpaperManager.ACTION_CHANGE_LIVE_WALLPAPER)
         val pkgName = context.packageName
-        // Force the absolute path: [your.package.name].[ClassName]
-        val componentName = ComponentName(pkgName, "$pkgName.HtmlWallpaperService")
+        
+        // Exact path to the Service defined in your Manifest
+        val componentName = ComponentName(pkgName, "com.tossstudio.HtmlWallpaperService")
 
         intent.putExtra(WallpaperManager.EXTRA_LIVE_WALLPAPER_COMPONENT, componentName)
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
