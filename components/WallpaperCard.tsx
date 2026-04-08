@@ -28,27 +28,55 @@ const WallpaperCard = React.memo(({ item, index, colors, onPress }: WallpaperCar
                     await FileSystem.makeDirectoryAsync(WALLPAPER_DIR, { intermediates: true });
                 }
 
-                // 2. THE PUBLIC FOLDER MAGIC (Now with both engines!)
-                const androidThreeUrl = 'file:///android_asset/three.min.js';
-                const androidTweenUrl = 'file:///android_asset/TweenMax.min.js';
+                // 2. Ensure dependencies are downloaded locally to prevent WebView missing asset errors
+                const THREE_JS_FILE = `${WALLPAPER_DIR}three.min.js`;
+                const TWEEN_JS_FILE = `${WALLPAPER_DIR}TweenMax.min.js`;
+
+                if (!(await FileSystem.getInfoAsync(THREE_JS_FILE)).exists) {
+                    await FileSystem.downloadAsync('https://cdnjs.cloudflare.com/ajax/libs/three.js/r75/three.min.js', THREE_JS_FILE);
+                }
+                if (!(await FileSystem.getInfoAsync(TWEEN_JS_FILE)).exists) {
+                    await FileSystem.downloadAsync('https://cdnjs.cloudflare.com/ajax/libs/gsap/1.19.1/TweenMax.min.js', TWEEN_JS_FILE);
+                }
+
+                const localThreeUrl = THREE_JS_FILE.startsWith('file://') ? THREE_JS_FILE : `file://${THREE_JS_FILE}`;
+                const localTweenUrl = TWEEN_JS_FILE.startsWith('file://') ? TWEEN_JS_FILE : `file://${TWEEN_JS_FILE}`;
 
                 let finalHtmlCode = item.indexCode
                     // Replace Three.js paths
-                    .replace('https://cdnjs.cloudflare.com/ajax/libs/three.js/r75/three.min.js', androidThreeUrl)
-                    .replace('./three.min.js', androidThreeUrl)
+                    .replace('https://cdnjs.cloudflare.com/ajax/libs/three.js/r75/three.min.js', localThreeUrl)
+                    .replace('./three.min.js', localThreeUrl)
                     // Replace TweenMax paths
-                    .replace('https://cdnjs.cloudflare.com/ajax/libs/gsap/1.19.1/TweenMax.min.js', androidTweenUrl)
-                    .replace('./TweenMax.min.js', androidTweenUrl);
+                    .replace('https://cdnjs.cloudflare.com/ajax/libs/gsap/1.19.1/TweenMax.min.js', localTweenUrl)
+                    .replace('./TweenMax.min.js', localTweenUrl);
 
-                // 3. Write ONLY the HTML to file
-                await FileSystem.writeAsStringAsync(INDEX_HTML_PATH, finalHtmlCode, {
+                // 3. Cleanup old files to prevent storage leak & bypass WebView cache
+                try {
+                    const files = await FileSystem.readDirectoryAsync(WALLPAPER_DIR);
+                    for (const file of files) {
+                        if (file.endsWith('.html') || file.startsWith('index_')) {
+                            await FileSystem.deleteAsync(`${WALLPAPER_DIR}${file}`, { idempotent: true });
+                        }
+                    }
+                } catch (e) {
+                    console.log('Error cleaning up wallpaper dir:', e);
+                }
+
+                // Create a unique file name to forcefully bypass Android WebView caching
+                const uniqueFileName = `index_${Date.now()}.html`;
+                const uniqueHtmlPath = `${WALLPAPER_DIR}${uniqueFileName}`;
+
+                await FileSystem.writeAsStringAsync(uniqueHtmlPath, finalHtmlCode, {
                     encoding: FileSystem.EncodingType.UTF8,
                 });
 
+                // Small delay to ensure file system syncs before native module reads it
+                await new Promise(resolve => setTimeout(resolve, 100));
+
                 // 4. Register and apply via Native Module
-                const fileUrl = INDEX_HTML_PATH.startsWith('file://')
-                    ? INDEX_HTML_PATH
-                    : `file://${INDEX_HTML_PATH}`;
+                const fileUrl = uniqueHtmlPath.startsWith('file://')
+                    ? uniqueHtmlPath
+                    : `file://${uniqueHtmlPath}`;
 
                 await WallpaperEngine.saveHtmlWallpaperPath(fileUrl);
                 await WallpaperEngine.applyHtmlWallpaper();

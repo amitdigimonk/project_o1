@@ -13,7 +13,7 @@ export const LION_3D_CODE = `<!DOCTYPE html>
       padding: 0;
       width: 100%;
       height: 100%;
-      background: #ebe5e7;
+      background: linear-gradient(to bottom, #74676c 0%, #ebe5e7 40%, #ebe5e7 60%, #74676c 100%);
       overflow: hidden;
       touch-action: none; /* REQUIRED FOR MOBILE DRAGGING */
     }
@@ -58,13 +58,13 @@ export const LION_3D_CODE = `<!DOCTYPE html>
       nearPlane = 1;
       farPlane = 2000; 
       camera = new THREE.PerspectiveCamera(fieldOfView, aspectRatio, nearPlane, farPlane);
-      camera.position.z = 800;  
-      camera.position.y = 0;
+      camera.position.z = 1100;  
+      camera.position.y = -50;
       camera.lookAt(new THREE.Vector3(0,0,0));    
-      renderer = new THREE.WebGLRenderer({alpha: true, antialias: true});
+      renderer = new THREE.WebGLRenderer({alpha: true, antialias: false, powerPreference: "high-performance"});
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
       renderer.setSize(WIDTH, HEIGHT);
-      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.enabled = false;
       container = document.getElementById('world');
       container.appendChild(renderer.domElement);
       windowHalfX = WIDTH / 2;
@@ -123,10 +123,10 @@ export const LION_3D_CODE = `<!DOCTYPE html>
       light = new THREE.HemisphereLight(0xffffff, 0xffffff, .5)
       shadowLight = new THREE.DirectionalLight(0xffffff, .8);
       shadowLight.position.set(200, 200, 200);
-      shadowLight.castShadow = true;
+      shadowLight.castShadow = false;
       backLight = new THREE.DirectionalLight(0xffffff, .4);
       backLight.position.set(-100, 200, 50);
-      backLight.castShadow = true;
+      backLight.castShadow = false;
       scene.add(backLight);
       scene.add(light);
       scene.add(shadowLight);
@@ -136,7 +136,7 @@ export const LION_3D_CODE = `<!DOCTYPE html>
       floor = new THREE.Mesh(new THREE.PlaneBufferGeometry(1000,500), new THREE.MeshBasicMaterial({color: 0xebe5e7}));
       floor.rotation.x = -Math.PI/2;
       floor.position.y = -100;
-      floor.receiveShadow = true;
+      floor.receiveShadow = false;
       scene.add(floor);
     }
 
@@ -206,33 +206,46 @@ export const LION_3D_CODE = `<!DOCTYPE html>
       this.bodyInitPositions = [];
       this.maneParts = [];
       this.threegroup = new THREE.Group();
-      this.yellowMat = new THREE.MeshLambertMaterial ({color: 0xfdd276, shading:THREE.FlatShading});
+      this.yellowMat = new THREE.MeshLambertMaterial ({color: 0xe3802e, shading:THREE.FlatShading}); // Orange cat color
       this.redMat = new THREE.MeshLambertMaterial ({color: 0xad3525, shading:THREE.FlatShading});
       this.pinkMat = new THREE.MeshLambertMaterial ({color: 0xe55d2b, shading:THREE.FlatShading});
       this.whiteMat = new THREE.MeshLambertMaterial ({color: 0xffffff, shading:THREE.FlatShading});
       this.purpleMat = new THREE.MeshLambertMaterial ({color: 0x451954, shading:THREE.FlatShading});
       this.greyMat = new THREE.MeshLambertMaterial ({color: 0x653f4c, shading:THREE.FlatShading});
       this.blackMat = new THREE.MeshLambertMaterial ({color: 0x302925, shading:THREE.FlatShading});
-      var bodyGeom = new THREE.CylinderGeometry(30,80, 140, 4);
+      var bodyGeom = new THREE.CylinderGeometry(20,80, 140, 16);
       var maneGeom = new THREE.BoxGeometry(40,40,15);
-      var faceGeom = new THREE.BoxGeometry(80,80,80);
-      var spotGeom = new THREE.BoxGeometry(4,4,4);
-      var mustacheGeom = new THREE.BoxGeometry(30,2,1);
-      mustacheGeom.applyMatrix( new THREE.Matrix4().makeTranslation( 15, 0, 0 ) );
-      var earGeom = new THREE.BoxGeometry(20,20,20);
-      var noseGeom = new THREE.BoxGeometry(40,40,20);
-      var eyeGeom = new THREE.BoxGeometry(5,30,30);
-      var irisGeom = new THREE.BoxGeometry(4,10,10);
+      var faceGeom = new THREE.SphereGeometry(40, 16, 16);
+      faceGeom.applyMatrix( new THREE.Matrix4().makeScale( 0.9, 0.75, 0.8 ) );
+      var spotGeom = new THREE.BoxGeometry(0,0,0); // Hide spots
+      var mustacheGeom = new THREE.BoxGeometry(50, 1, 1);
+      mustacheGeom.applyMatrix( new THREE.Matrix4().makeTranslation( 25, 0, 0 ) );
+      var earGeom = new THREE.CylinderGeometry(0, 15, 30, 8, 1);
+      var noseGeom = new THREE.SphereGeometry(8, 8, 8);
+      noseGeom.applyMatrix( new THREE.Matrix4().makeScale( 1, 0.6, 0.5 ) );
+      var eyeGeom = new THREE.SphereGeometry(12, 12, 12);
+      eyeGeom.applyMatrix( new THREE.Matrix4().makeScale( 0.4, 1, 1 ) );
+      var irisGeom = new THREE.SphereGeometry(6, 8, 8);
+      irisGeom.applyMatrix( new THREE.Matrix4().makeScale( 0.4, 1.2, 0.3 ) );
       var mouthGeom = new THREE.BoxGeometry(20,20,10);
-      var smileGeom = new THREE.TorusGeometry( 12, 4, 2, 10, Math.PI );
-      var lipsGeom = new THREE.BoxGeometry(40,15,20);
-      var kneeGeom = new THREE.BoxGeometry(25, 80, 80);
+      var smileGeom = new THREE.TorusGeometry( 8, 3, 2, 10, Math.PI );
+      var lipsGeom = new THREE.BoxGeometry(20,10,20);
+      var kneeGeom = new THREE.SphereGeometry(40, 12, 12);
+      kneeGeom.applyMatrix( new THREE.Matrix4().makeScale( 0.3, 1, 1 ) );
       kneeGeom.applyMatrix( new THREE.Matrix4().makeTranslation( 0, 50, 0 ) );
-      var footGeom = new THREE.BoxGeometry(40, 20, 20);
+      var footGeom = new THREE.SphereGeometry(15, 12, 12);
+      footGeom.applyMatrix( new THREE.Matrix4().makeScale( 1.3, 0.6, 0.6 ) );
       this.body = new THREE.Mesh(bodyGeom, this.yellowMat);
       this.body.position.z = -60;
       this.body.position.y = -30;
-      this.bodyVertices = [0,1,2,3,4,10];
+      this.bodyVertices = [];
+      for (var i=0; i<this.body.geometry.vertices.length; i++){
+        var tv = this.body.geometry.vertices[i];
+        if (tv.y > 60) {
+          this.bodyVertices.push(i);
+        }
+      }
+      
       for (var i=0;i<this.bodyVertices.length; i++){
         var tv = this.body.geometry.vertices[this.bodyVertices[i]];
         tv.z =70;
@@ -340,46 +353,48 @@ export const LION_3D_CODE = `<!DOCTYPE html>
       this.spot8 = this.spot4.clone();
       this.spot8.position.x = -39;
       this.leftEye = new THREE.Mesh(eyeGeom, this.whiteMat);
-      this.leftEye.position.x = 40;
+      this.leftEye.position.x = 25;
       this.leftEye.position.z = 120;
-      this.leftEye.position.y = 25;
+      this.leftEye.position.y = 15;
       this.rightEye = new THREE.Mesh(eyeGeom, this.whiteMat);
-      this.rightEye.position.x = -40;
+      this.rightEye.position.x = -25;
       this.rightEye.position.z = 120;
-      this.rightEye.position.y = 25;
+      this.rightEye.position.y = 15;
       this.leftIris = new THREE.Mesh(irisGeom, this.purpleMat);
-      this.leftIris.position.x = 42;
+      this.leftIris.position.x = 27;
       this.leftIris.position.z = 120;
-      this.leftIris.position.y = 25;
+      this.leftIris.position.y = 15;
       this.rightIris = new THREE.Mesh(irisGeom, this.purpleMat);
-      this.rightIris.position.x = -42;
+      this.rightIris.position.x = -27;
       this.rightIris.position.z = 120;
-      this.rightIris.position.y = 25;
+      this.rightIris.position.y = 15;
       this.mouth = new THREE.Mesh(mouthGeom, this.blackMat);
       this.mouth.position.z = 171;
-      this.mouth.position.y = -30;
+      this.mouth.position.y = -20;
       this.mouth.scale.set(.5,.5,1);
       this.smile = new THREE.Mesh(smileGeom, this.greyMat);
       this.smile.position.z = 173;  
-      this.smile.position.y = -15;
+      this.smile.position.y = -5;
       this.smile.rotation.z = -Math.PI;
       this.lips = new THREE.Mesh(lipsGeom, this.yellowMat);
       this.lips.position.z = 165;
-      this.lips.position.y = -45;
+      this.lips.position.y = -35;
       this.rightEar = new THREE.Mesh(earGeom, this.yellowMat);
-      this.rightEar.position.x = -50;
-      this.rightEar.position.y = 50;
+      this.rightEar.position.x = -35;
+      this.rightEar.position.y = 35;
       this.rightEar.position.z = 105;
+      this.rightEar.rotation.z = -0.15;
       this.leftEar = new THREE.Mesh(earGeom, this.yellowMat);
-      this.leftEar.position.x = 50;
-      this.leftEar.position.y = 50;
+      this.leftEar.position.x = 35;
+      this.leftEar.position.y = 35;
       this.leftEar.position.z = 105;
-      this.nose = new THREE.Mesh(noseGeom, this.greyMat);
+      this.leftEar.rotation.z = 0.15;
+      this.nose = new THREE.Mesh(noseGeom, this.pinkMat);
       this.nose.position.z = 170;
-      this.nose.position.y = 25;
+      this.nose.position.y = 15;
       this.head = new THREE.Group();
       this.head.add(this.face);
-      this.head.add(this.mane);
+      // this.head.add(this.mane); // Cats don't have manes
       this.head.add(this.rightEar);
       this.head.add(this.leftEar);
       this.head.add(this.nose);
@@ -449,10 +464,10 @@ export const LION_3D_CODE = `<!DOCTYPE html>
     }
 
     Lion.prototype.look = function(xTarget, yTarget){
-      this.tHeagRotY = rule3(xTarget, -200, 200, -Math.PI/4, Math.PI/4);
-      this.tHeadRotX = rule3(yTarget, -200,200, -Math.PI/4, Math.PI/4);
-      this.tHeadPosX = rule3(xTarget, -200, 200, 70,-70);
-      this.tHeadPosY = rule3(yTarget, -140, 260, 20, 100);
+      this.tHeagRotY = rule3(xTarget, -200, 200, -Math.PI/8, Math.PI/8);
+      this.tHeadRotX = rule3(yTarget, -200, 200, -Math.PI/16, Math.PI/16);
+      this.tHeadPosX = rule3(xTarget, -200, 200, 30, -30);
+      this.tHeadPosY = rule3(yTarget, -140, 260, 50, 70);
       this.tHeadPosZ = 0;
       this.tEyeScale = 1;
       this.tIrisYScale = 1;
@@ -469,7 +484,7 @@ export const LION_3D_CODE = `<!DOCTYPE html>
       this.tSmileRotZ = -Math.PI;
       this.tRightKneeRotZ = rule3(xTarget, -200, 200, .3-Math.PI/8, .3+Math.PI/8);
       this.tLeftKneeRotZ = rule3(xTarget, -200, 200, -.3-Math.PI/8, -.3+Math.PI/8)
-      this.updateBody(10);
+      this.updateBody(5);
       this.mane.rotation.y = 0;
       this.mane.rotation.x = 0;
       for (var i=0; i<this.maneParts.length; i++){
@@ -548,13 +563,10 @@ export const LION_3D_CODE = `<!DOCTYPE html>
       render();
       var xTarget = (mousePos.x-windowHalfX);
       var yTarget= (mousePos.y-windowHalfY);
-      fan.isBlowing = isBlowing;
-      fan.update(xTarget, yTarget, deltaTime);
-      if(isBlowing) {
-        lion.cool(xTarget, yTarget, deltaTime);
-      }else{
-        lion.look(xTarget, yTarget);
-      }
+      
+      // Always look at the pointer direction, don't blow or cool
+      lion.look(xTarget, yTarget);
+      
       requestAnimationFrame(loop);
     }
 
@@ -562,15 +574,21 @@ export const LION_3D_CODE = `<!DOCTYPE html>
       renderer.render(scene, camera);
     }
 
-    // FIXED: Use setTimeout to bypass Android WebView window.onload bug
-    setTimeout(() => {
+    function checkReady() {
+      if (window.innerWidth === 0 || window.innerHeight === 0) {
+        requestAnimationFrame(checkReady);
+      } else {
         init();
         createLights();
         createFloor();
         createLion();
-        createFan();
+        // createFan(); disabled by request
         loop();
-    }, 100);
+      }
+    }
+    
+    // Bypass Android WebView window.onload bug securely
+    checkReady();
 
     function rule3(v,vmin,vmax,tmin, tmax){
       var nv = Math.max(Math.min(v,vmax), vmin);
@@ -591,8 +609,8 @@ export const RUNNER_3D_CODE = `<!DOCTYPE html>
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
   <link href="https://fonts.googleapis.com/css?family=Voltaire" rel="stylesheet">
   <style>
-    body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #dbe6e6; touch-action: none; }
-    #world { position: absolute; width: 100%; height: 100%; background-color: #dbe6e6; overflow: hidden; z-index: 1; }
+    body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: linear-gradient(#5a768c, #dbe6e6); touch-action: none; }
+    #world { position: absolute; width: 100%; height: 100%; background: transparent; overflow: hidden; z-index: 1; }
     canvas { position: absolute; top: 0; left: 0; width: 100vw !important; height: 100vh !important; z-index: 99 !important; display: block; }
     
     #gameoverInstructions {
@@ -614,9 +632,6 @@ export const RUNNER_3D_CODE = `<!DOCTYPE html>
 </head>
 <body>
   <div id="world"></div>
-  <div id="gameoverInstructions">Game Over</div>
-  <div id="dist"><div class="label">distance</div><div id="distValue">000</div></div>
-  <div id="instructions">Tap to jump<br><span class="lightInstructions">Grab carrots / avoid hedgehogs</span></div>
 
   <script>
     //THREEJS RELATED VARIABLES
@@ -1560,68 +1575,42 @@ export const RUNNER_3D_CODE = `<!DOCTYPE html>
 
 
     Trunc = function(){
-      var truncHeight = 50 + Math.random()*150;
-      var topRadius = 1+Math.random()*5;
-      var bottomRadius = 5+Math.random()*5;
-      var mats = [blackMat, brownMat, pinkMat, whiteMat, greenMat, lightBrownMat, pinkMat];
-      var matTrunc = blackMat;//mats[Math.floor(Math.random()*mats.length)];
-      var nhSegments = 3;//Math.ceil(2 + Math.random()*6);
-      var nvSegments = 3;//Math.ceil(2 + Math.random()*6);
-      var geom = new THREE.CylinderGeometry(topRadius,bottomRadius,truncHeight, nhSegments, nvSegments);
-      geom.applyMatrix(new THREE.Matrix4().makeTranslation(0,truncHeight/2,0));
+      var truncHeight = 20 + Math.random()*30;
+      var geom = new THREE.CylinderGeometry(2, 3, truncHeight, 5);
+      geom.applyMatrix(new THREE.Matrix4().makeTranslation(0, truncHeight/2, 0));
       
-      this.mesh = new THREE.Mesh(geom, matTrunc);
-      
-      for (var i=0; i<geom.vertices.length; i++){
-        var noise = Math.random() ;
-        var v = geom.vertices[i];
-        v.x += -noise + Math.random()*noise*2;
-        v.y += -noise + Math.random()*noise*2;
-        v.z += -noise + Math.random()*noise*2;
-        
-        geom.computeVertexNormals();
-        
-        // FRUITS
-        
-        if (Math.random()>.7){
-          var size = Math.random()*3;
-          var fruitGeometry = new THREE.CubeGeometry(size,size,size,1);
-          var matFruit = mats[Math.floor(Math.random()*mats.length)];
-          var fruit = new THREE.Mesh(fruitGeometry, matFruit);
-          fruit.position.x = v.x;
-          fruit.position.y = v.y+3;
-          fruit.position.z = v.z;
-          fruit.rotation.x = Math.random()*Math.PI;
-          fruit.rotation.y = Math.random()*Math.PI;
-          
-          this.mesh.add(fruit);
-        }
-        
-        // BRANCHES
-        
-        if (Math.random()>.5 && v.y > 10 && v.y < truncHeight - 10){
-          var h = 3 + Math.random()*5;
-          var thickness = .2 + Math.random();
-          
-          var branchGeometry = new THREE.CylinderGeometry(thickness/2, thickness, h, 3, 1);
-          branchGeometry.applyMatrix(new THREE.Matrix4().makeTranslation(0,h/2,0));
-          var branch = new THREE.Mesh(branchGeometry, matTrunc);
-          branch.position.x = v.x;
-          branch.position.y = v.y;
-          branch.position.z = v.z;
-          
-          var vec = new THREE.Vector3(v.x, 2, v.z);
-          var axis = new THREE.Vector3(0,1,0);
-          branch.quaternion.setFromUnitVectors(axis, vec.clone().normalize());
-          
-          
-          this.mesh.add(branch);
-        }
-        
-      }
-      
-      
+      this.mesh = new THREE.Mesh(geom, brownMat);
       this.mesh.castShadow = true;
+      
+      var greenerMat = new THREE.MeshPhongMaterial({ color: 0x4caf50, shininess:0, shading:THREE.FlatShading });
+      var isPine = Math.random() > 0.5;
+      
+      if (isPine) {
+        var leaves = new THREE.Mesh(new THREE.CylinderGeometry(0, 15, 30, 5), greenerMat);
+        leaves.position.y = truncHeight + 5;
+        leaves.castShadow = true;
+        this.mesh.add(leaves);
+        
+        var leavesTop = new THREE.Mesh(new THREE.CylinderGeometry(0, 10, 20, 5), greenerMat);
+        leavesTop.position.y = truncHeight + 20;
+        leavesTop.castShadow = true;
+        this.mesh.add(leavesTop);
+      } else {
+        var leaves = new THREE.Mesh(new THREE.SphereGeometry(16, 6, 6), greenerMat);
+        leaves.position.y = truncHeight + 5;
+        leaves.castShadow = true;
+        this.mesh.add(leaves);
+        
+        var fluff2 = new THREE.Mesh(new THREE.SphereGeometry(10, 5, 5), greenerMat);
+        fluff2.position.set(8, truncHeight+2, 0);
+        fluff2.castShadow = true;
+        this.mesh.add(fluff2);
+        
+        var fluff3 = new THREE.Mesh(new THREE.SphereGeometry(10, 5, 5), greenerMat);
+        fluff3.position.set(-8, truncHeight+2, 0);
+        fluff3.castShadow = true;
+        this.mesh.add(fluff3);
+      }
     }
 
     var firs = new THREE.Group();
@@ -1632,8 +1621,7 @@ export const RUNNER_3D_CODE = `<!DOCTYPE html>
        for(var i=0; i< nTrees; i++){
         var phi = i*(Math.PI*2)/nTrees;
         var theta = Math.PI/2;
-        //theta += .25 + Math.random()*.3; 
-        theta += (Math.random()>.05)? .25 + Math.random()*.3 : - .35 -  Math.random()*.1;
+        theta += .25 + Math.random()*.3; 
        
         var fir = new Tree();
         fir.mesh.position.x = Math.sin(theta)*Math.cos(phi)*floorRadius;
@@ -1767,8 +1755,6 @@ export const RUNNER_3D_CODE = `<!DOCTYPE html>
         if (hero.status == "running"){
           hero.run();
         }
-        updateDistance();
-        updateMonsterPosition();
         updateCarrotPosition();
         updateObstaclePosition();
         checkCollision();
@@ -1785,14 +1771,12 @@ export const RUNNER_3D_CODE = `<!DOCTYPE html>
     function init(event){
       initScreenAnd3D();
       createLights();
-      createFloor()
+      createFloor();
       createHero();
-      createMonster();
       createFirs();
       createCarrot();
       createBonusParticles();
       createObstacle();
-      initUI();
       resetGame();
       loop();
       
@@ -1816,8 +1800,6 @@ export const RUNNER_3D_CODE = `<!DOCTYPE html>
       gameStatus = "play";
       hero.status = "running";
       hero.nod();
-      updateLevel();
-      levelInterval = setInterval(updateLevel, levelUpdateFreq);
     }
 
     function initUI(){
@@ -1827,7 +1809,14 @@ export const RUNNER_3D_CODE = `<!DOCTYPE html>
     }
 
     // Load instantly (bypassing window.onload bug in Android)
-    setTimeout(init, 100);
+    function checkReady() {
+      if (window.innerWidth === 0 || window.innerHeight === 0) {
+        requestAnimationFrame(checkReady);
+      } else {
+        init();
+      }
+    }
+    checkReady();
 
   <\/script>
 </body>
@@ -1892,7 +1881,7 @@ export const FISH_3D_CODE = `<!DOCTYPE html>
       camera = new THREE.PerspectiveCamera(fieldOfView, aspectRatio, nearPlane, farPlane);
       camera.position.z = 1000;  
       
-      renderer = new THREE.WebGLRenderer({alpha: true, antialias: true });
+      renderer = new THREE.WebGLRenderer({alpha: true, antialias: false, powerPreference: "high-performance"});
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
       renderer.setSize(WIDTH, HEIGHT);
       container = document.getElementById('world');
@@ -1993,11 +1982,7 @@ export const FISH_3D_CODE = `<!DOCTYPE html>
       sideRightFish.rotation.x = halfPI + sideFinsCycle*.2;
       sideLeftFish.rotation.x = halfPI + sideFinsCycle*.2;
       
-      var rvalue = (fishSlowColor.r + (fishFastColor.r - fishSlowColor.r)*s2)/255;
-      var gvalue = (fishSlowColor.g + (fishFastColor.g - fishSlowColor.g)*s2)/255;
-      var bvalue = (fishSlowColor.b + (fishFastColor.b - fishSlowColor.b)*s2)/255;
-      bodyFish.material.color.setRGB(rvalue,gvalue,bvalue);
-      lipsFish.material.color.setRGB(rvalue,gvalue,bvalue);
+      // Removed dynamic color shifting so bird stays visibly distinct
       
       fish.scale.set(1+s3,1-s3,1-s3);
       
@@ -2029,111 +2014,93 @@ export const FISH_3D_CODE = `<!DOCTYPE html>
     function createFish(){
       fish = new THREE.Group();
       
-      var bodyGeom = new THREE.BoxGeometry(120, 120, 120);
-      var bodyMat = new THREE.MeshLambertMaterial({ color: 0x80f5fe , shading: THREE.FlatShading });
+      var bodyMat = new THREE.MeshLambertMaterial({ color: 0xcc0000 , shading: THREE.FlatShading });
+      var bodyGeom = new THREE.SphereGeometry(60, 24, 24);
       bodyFish = new THREE.Mesh(bodyGeom, bodyMat);
       
-      var tailGeom = new THREE.CylinderGeometry(0, 60, 60, 4, false);
-      var tailMat = new THREE.MeshLambertMaterial({ color: 0xff00dc, shading: THREE.FlatShading });
+      var bellyMat = new THREE.MeshLambertMaterial({ color: 0xeadbba , shading: THREE.FlatShading });
+      var bellyGeom = new THREE.SphereGeometry(45, 16, 16);
+      bellyGeom.applyMatrix( new THREE.Matrix4().makeScale( 1, 0.4, 1 ) );
+      tooth3 = new THREE.Mesh(bellyGeom, bellyMat); // Using tooth3 for belly
+      tooth3.position.y = -35;
+      tooth3.position.x = 20;
+
+      var tuftGeom = new THREE.BoxGeometry(10, 30, 10);
+      tailFish = new THREE.Mesh(tuftGeom, bodyMat);
+      tailFish.position.x = -65;
+      tailFish.rotation.z = -halfPI/2;
       
-      tailFish = new THREE.Mesh(tailGeom, tailMat);
-      tailFish.scale.set(.8,1,.1);
-      tailFish.position.x = -60; 
-      tailFish.rotation.z = -halfPI;
+      topFish = new THREE.Mesh(tuftGeom, bodyMat);
+      topFish.position.y = 65;
+      topFish.rotation.z = halfPI/6;
       
-      var lipsGeom = new THREE.BoxGeometry(25, 10, 120);
-      var lipsMat = new THREE.MeshLambertMaterial({ color: 0x80f5fe , shading: THREE.FlatShading });
-      lipsFish = new THREE.Mesh(lipsGeom, lipsMat);
-      lipsFish.position.x = 65;
-      lipsFish.position.y = -47;
-      lipsFish.rotation.z = halfPI;
-      
-      topFish = new THREE.Mesh(tailGeom, tailMat);
-      topFish.scale.set(.8,1,.1);
-      topFish.position.x = -20; 
-      topFish.position.y = 60; 
-      topFish.rotation.z = -halfPI;
-      
-      sideRightFish = new THREE.Mesh(tailGeom, tailMat);
-      sideRightFish.scale.set(.8,1,.1);
+      sideRightFish = new THREE.Mesh(tuftGeom, bodyMat);
+      sideRightFish.position.z = -60;
       sideRightFish.rotation.x = halfPI;
-      sideRightFish.rotation.z = -halfPI;
-      sideRightFish.position.x = 0; 
-      sideRightFish.position.y = -50; 
-      sideRightFish.position.z = -60; 
       
-      sideLeftFish = new THREE.Mesh(tailGeom, tailMat);
-      sideLeftFish.scale.set(.8,1,.1);
+      sideLeftFish = new THREE.Mesh(tuftGeom, bodyMat);
+      sideLeftFish.position.z = 60;
       sideLeftFish.rotation.x = halfPI;
-      sideLeftFish.rotation.z = -halfPI;
-      sideLeftFish.position.x = 0; 
-      sideLeftFish.position.y = -50; 
-      sideLeftFish.position.z = 60; 
       
-      var eyeGeom = new THREE.BoxGeometry(40, 40,5);
+      var beakMat = new THREE.MeshLambertMaterial({ color: 0xffcc00 , shading: THREE.FlatShading });
+      var beakGeom = new THREE.CylinderGeometry(0, 15, 40, 4, 1);
+      beakGeom.applyMatrix( new THREE.Matrix4().makeRotationZ(-halfPI) );
+      lipsFish = new THREE.Mesh(beakGeom, beakMat);
+      lipsFish.position.x = 65;
+      lipsFish.position.y = -5;
+      
       var eyeMat = new THREE.MeshLambertMaterial({ color: 0xffffff, shading: THREE.FlatShading });
+      var eyeGeom = new THREE.SphereGeometry(20, 16, 16);
+      eyeGeom.applyMatrix( new THREE.Matrix4().makeScale( 0.5, 1, 1 ) ); 
       
       rightEye = new THREE.Mesh(eyeGeom,eyeMat );
-      rightEye.position.z = -60;
-      rightEye.position.x = 25;
-      rightEye.position.y = -10;
-      
-      var irisGeom = new THREE.BoxGeometry(10, 10,3);
-      var irisMat = new THREE.MeshLambertMaterial({ color: 0x330000, shading: THREE.FlatShading });
-      
-      rightIris = new THREE.Mesh(irisGeom,irisMat );
-      rightIris.position.z = -65;
-      rightIris.position.x = 35;
-      rightIris.position.y = -10;
+      rightEye.position.z = -18;
+      rightEye.position.x = 45;
+      rightEye.position.y = 15;
       
       leftEye = new THREE.Mesh(eyeGeom,eyeMat );
-      leftEye.position.z = 60;
-      leftEye.position.x = 25;
-      leftEye.position.y = -10;
+      leftEye.position.z = 18;
+      leftEye.position.x = 45;
+      leftEye.position.y = 15;
+      
+      var irisMat = new THREE.MeshLambertMaterial({ color: 0x111111, shading: THREE.FlatShading });
+      var irisGeom = new THREE.SphereGeometry(5, 8, 8);
+      
+      rightIris = new THREE.Mesh(irisGeom,irisMat );
+      rightIris.position.z = -22;
+      rightIris.position.x = 55;
+      rightIris.position.y = 15;
       
       leftIris = new THREE.Mesh(irisGeom,irisMat );
-      leftIris.position.z = 65;
-      leftIris.position.x = 35;
-      leftIris.position.y = -10;
-        
-      var toothGeom = new THREE.BoxGeometry(20, 4, 20);
-      var toothMat = new THREE.MeshLambertMaterial({ color: 0xffffff, shading: THREE.FlatShading });
+      leftIris.position.z = 22;
+      leftIris.position.x = 55;
+      leftIris.position.y = 15;
       
-      tooth1 = new THREE.Mesh(toothGeom,toothMat);
-      tooth1.position.set(65, -35, -50);
-      tooth1.rotation.set(-halfPI, 0, halfPI);
+      var browMat = new THREE.MeshLambertMaterial({ color: 0x111111, shading: THREE.FlatShading });
+      var browGeom = new THREE.BoxGeometry(15, 8, 35);
       
-      tooth2 = new THREE.Mesh(toothGeom,toothMat);
-      tooth2.position.set(65, -30, -25);
-      tooth2.rotation.set(-Math.PI/12, 0, halfPI);
+      // We map eyebrows to tooth1 and tooth2 to re-use globals
+      tooth1 = new THREE.Mesh(browGeom, browMat);
+      tooth1.position.set(45, 33, -20);
+      tooth1.rotation.set(-0.2, 0, 0.4);
       
-      tooth3 = new THREE.Mesh(toothGeom,toothMat);
-      tooth3.position.set(65, -25, 0);
-      tooth3.rotation.set(0, 0, halfPI);
-      
-      tooth4 = new THREE.Mesh(toothGeom,toothMat);
-      tooth4.position.set(65, -30, 25);
-      tooth4.rotation.set(Math.PI/12, 0, halfPI);
-      
-      tooth5 = new THREE.Mesh(toothGeom,toothMat);
-      tooth5.position.set(65, -35, 50);
-      tooth5.rotation.set(Math.PI/8, 0, halfPI);
+      tooth2 = new THREE.Mesh(browGeom, browMat);
+      tooth2.position.set(45, 33, 20);
+      tooth2.rotation.set(0.2, 0, 0.4);
       
       fish.add(bodyFish);
+      fish.add(tooth3); // Belly
       fish.add(tailFish);
       fish.add(topFish);
       fish.add(sideRightFish);
       fish.add(sideLeftFish);
-      fish.add(rightEye);
-      fish.add(rightIris);
-      fish.add(leftEye);
-      fish.add(leftIris);
-      fish.add(tooth1);
-      fish.add(tooth2);
-      fish.add(tooth3);
-      fish.add(tooth4);
-      fish.add(tooth5);
       fish.add(lipsFish);
+      fish.add(rightEye);
+      fish.add(leftEye);
+      fish.add(rightIris);
+      fish.add(leftIris);
+      fish.add(tooth1); // Right Brow
+      fish.add(tooth2); // Left Brow
       
       fish.rotation.y = -Math.PI/4;
       scene.add(fish);
@@ -2178,29 +2145,25 @@ export const FISH_3D_CODE = `<!DOCTYPE html>
     }
 
     function getRandomColor(){
-      var col = hexToRgb(colors[Math.floor(Math.random()*colors.length)]);
-      var threecol = new THREE.Color("rgb("+col.r+","+col.g+","+col.b+")");
-      return threecol;
-    }
-      
-    function hexToRgb(hex) {
-      var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-      return result ? {
-        r: parseInt(result[1], 16),
-        g: parseInt(result[2], 16),
-        b: parseInt(result[3], 16)
-      } : null;
+      var hex = colors[Math.floor(Math.random()*colors.length)];
+      return new THREE.Color(hex);
     }
 
+
     // Load instantly (bypassing window.onload bug in Android)
-    setTimeout(() => {
+    function checkReady() {
+      if (window.innerWidth === 0 || window.innerHeight === 0) {
+        requestAnimationFrame(checkReady);
+      } else {
         init();
         createLight();
         createFish();
         createParticle();
         loop();
         particleInterval = setInterval(flyParticle, 70); 
-    }, 100);
+      }
+    }
+    checkReady();
 
   <\/script>
 </body>
@@ -2637,7 +2600,6 @@ export const DRAGON_3D_CODE = `<!DOCTYPE html>
   <\/script>
 </body>
 </html>`;
-
 
 export const BIRDS_3D_CODE = `<!DOCTYPE html>
 <html lang="en">
