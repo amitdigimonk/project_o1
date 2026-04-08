@@ -591,7 +591,7 @@ export const RUNNER_3D_CODE = `<!DOCTYPE html>
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
   <link href="https://fonts.googleapis.com/css?family=Voltaire" rel="stylesheet">
   <style>
-    body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #dbe6e6; }
+    body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #dbe6e6; touch-action: none; }
     #world { position: absolute; width: 100%; height: 100%; background-color: #dbe6e6; overflow: hidden; z-index: 1; }
     canvas { position: absolute; top: 0; left: 0; width: 100vw !important; height: 100vh !important; z-index: 99 !important; display: block; }
     
@@ -610,6 +610,7 @@ export const RUNNER_3D_CODE = `<!DOCTYPE html>
     .lightInstructions { color: #5f9042; }
   </style>
   <script src="./three.min.js"><\/script>
+  <script src="./TweenMax.min.js"><\/script>
 </head>
 <body>
   <div id="world"></div>
@@ -618,67 +619,7 @@ export const RUNNER_3D_CODE = `<!DOCTYPE html>
   <div id="instructions">Tap to jump<br><span class="lightInstructions">Grab carrots / avoid hedgehogs</span></div>
 
   <script>
-    // --- CUSTOM MINI-TWEEN ENGINE (Zero Dependencies) ---
-    const MiniTween = (function() {
-      let tweens = [];
-      const Easing = {
-        easeOutQuad: t => t * (2 - t), easeInQuad: t => t * t, easeInOutQuad: t => t < .5 ? 2 * t * t : -1 + (4 - 2 * t) * t,
-        easeOutBack: t => { const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2); }
-      };
-      function parseVal(start, val) {
-        if (typeof val === 'string') {
-          if (val.startsWith('+=')) return start + parseFloat(val.substring(2));
-          if (val.startsWith('-=')) return start - parseFloat(val.substring(2));
-        } return parseFloat(val);
-      }
-      function to(targets, duration, vars) {
-        if (!Array.isArray(targets)) targets = [targets];
-        targets.forEach(target => {
-          let props = {};
-          for (let k in vars) if (!['ease','delay','onComplete','onUpdate','yoyo','repeat','onCompleteParams'].includes(k)) props[k] = { s: target[k], e: parseVal(target[k], vars[k]) };
-          tweens.push({ target, props, dur: duration, ease: vars.ease || Easing.easeOutQuad, delay: vars.delay || 0, time: 0, dir: 1, repeat: vars.repeat || 0, repCount: 0, yoyo: vars.yoyo, onComplete: vars.onComplete, onCompleteParams: vars.onCompleteParams, onUpdate: vars.onUpdate });
-        });
-      }
-      function from(targets, duration, vars) {
-        if (!Array.isArray(targets)) targets = [targets];
-        targets.forEach(target => {
-          let props = {};
-          for (let k in vars) if (!['ease','delay','onComplete','onUpdate','yoyo','repeat','onCompleteParams'].includes(k)) {
-            let endVal = target[k]; target[k] = vars[k]; props[k] = { s: vars[k], e: endVal };
-          }
-          tweens.push({ target, props, dur: duration, ease: vars.ease || Easing.easeOutQuad, delay: vars.delay || 0, time: 0, dir: 1, repeat: vars.repeat || 0, repCount: 0, yoyo: vars.yoyo, onComplete: vars.onComplete, onCompleteParams: vars.onCompleteParams, onUpdate: vars.onUpdate });
-        });
-      }
-      function killTweensOf(targets) {
-        if(!Array.isArray(targets)) targets = [targets];
-        tweens = tweens.filter(t => !targets.includes(t.target));
-      }
-      function update(dt) {
-        for (let i = tweens.length - 1; i >= 0; i--) {
-          let t = tweens[i];
-          if (t.delay > 0) { t.delay -= dt; continue; }
-          t.time += dt * t.dir;
-          let p = Math.max(0, Math.min(1, t.time / t.dur));
-          let eased = t.ease(p);
-          for (let k in t.props) t.target[k] = t.props[k].s + (t.props[k].e - t.props[k].s) * eased;
-          if (t.onUpdate) t.onUpdate();
-          if ((t.dir === 1 && p === 1) || (t.dir === -1 && p === 0)) {
-            if (t.yoyo && t.repCount < t.repeat * 2 + 1) { t.dir *= -1; t.repCount++; } 
-            else if (!t.yoyo && t.repCount < t.repeat) { t.time = 0; t.repCount++; } 
-            else { if (t.onComplete) t.onComplete.apply(null, t.onCompleteParams || []); tweens.splice(i, 1); }
-          }
-        }
-      }
-      return { to, from, killTweensOf, update, Easing };
-    })();
-
-    var TweenMax = { to: MiniTween.to, from: MiniTween.from, killTweensOf: MiniTween.killTweensOf };
-    var Power4 = { easeOut: MiniTween.Easing.easeOutQuad, easeInOut: MiniTween.Easing.easeInOutQuad, easeIn: MiniTween.Easing.easeInQuad };
-    var Power2 = Power4, Power1 = Power4;
-    var Back = { easeOut: MiniTween.Easing.easeOutBack };
-    // -----------------------------------------------------------
-
-    //THREEJS RELATED VARIABLES 
+    //THREEJS RELATED VARIABLES
     var scene, camera, fieldOfView, aspectRatio, nearPlane, farPlane, gobalLight, shadowLight, backLight, renderer, container, controls, clock;
     var delta = 0, floorRadius = 200, speed = 6, distance = 0, level = 1, levelInterval, levelUpdateFreq = 3000;
     var initSpeed = 5, maxSpeed = 48, monsterPos = .65, monsterPosTarget = .65, floorRotation = 0;
@@ -1819,8 +1760,6 @@ export const RUNNER_3D_CODE = `<!DOCTYPE html>
     function loop(){
       if(!isPlaying) { requestAnimationFrame(loop); return; } // Pause loop to save battery
       delta = clock.getDelta();
-      MiniTween.update(delta); // Runs our lightweight physics
-      
       updateFloorRotation();
       
       if (gameStatus == "play"){
@@ -2283,7 +2222,7 @@ export const DRAGON_3D_CODE = `<!DOCTYPE html>
       line-height: 1.5; user-select: none; z-index: 100; pointer-events: none;
     }
     .lightInstructions { color: #f89a78; font-size: 0.8em; font-weight: bold; }
-    
+
     #power {
       position: absolute; width: 100%; top: 50%; margin-top: -220px; font-family: system-ui, sans-serif;
       color: #481f26; font-size: 4em; font-weight: 800; text-transform: uppercase; text-align: center;
@@ -2291,6 +2230,7 @@ export const DRAGON_3D_CODE = `<!DOCTYPE html>
     }
   </style>
   <script src="./three.min.js"><\/script>
+  <script src="./TweenMax.min.js"><\/script>
 </head>
 <body>
   <div id="world"></div>
@@ -2298,88 +2238,6 @@ export const DRAGON_3D_CODE = `<!DOCTYPE html>
   <div id="power">00</div>
 
   <script>
-    // --- CUSTOM MINI-TWEEN ENGINE WITH BEZIER SUPPORT (Zero Dependencies) ---
-    const MiniTween = (function() {
-      let tweens = [];
-      const Easing = {
-        easeOutQuad: t => t * (2 - t), easeInQuad: t => t * t, easeInOutQuad: t => t < .5 ? 2 * t * t : -1 + (4 - 2 * t) * t,
-        easeOutBack: t => { const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2); },
-        easeOutStrong: t => 1 - Math.pow(1 - t, 5), easeInStrong: t => Math.pow(t, 5), easeInOutStrong: t => t < .5 ? 16 * Math.pow(t, 5) : 1 - Math.pow(-2 * t + 2, 5) / 2
-      };
-      function parseVal(start, val) {
-        if (typeof val === 'string') {
-          if (val.startsWith('+=')) return start + parseFloat(val.substring(2));
-          if (val.startsWith('-=')) return start - parseFloat(val.substring(2));
-        } return parseFloat(val);
-      }
-      function to(targets, duration, vars) {
-        if (!Array.isArray(targets)) targets = [targets];
-        targets.forEach(target => {
-          let props = {};
-          for (let k in vars) {
-            if (!['ease','delay','onComplete','onUpdate','yoyo','repeat','onCompleteParams','bezier'].includes(k)) {
-              props[k] = { s: target[k], e: parseVal(target[k], vars[k]) };
-            }
-          }
-          if (vars.bezier) props.bezier = vars.bezier;
-          tweens.push({ target, props, dur: duration, ease: vars.ease || Easing.easeOutQuad, delay: vars.delay || 0, time: 0, dir: 1, repeat: vars.repeat || 0, repCount: 0, yoyo: vars.yoyo, onComplete: vars.onComplete, onCompleteParams: vars.onCompleteParams, onUpdate: vars.onUpdate });
-        });
-      }
-      function killTweensOf(targets) {
-        if(!Array.isArray(targets)) targets = [targets];
-        tweens = tweens.filter(t => !targets.includes(t.target));
-      }
-      function update(dt) {
-        for (let i = tweens.length - 1; i >= 0; i--) {
-          let t = tweens[i];
-          if (t.delay > 0) { t.delay -= dt; continue; }
-          t.time += dt * t.dir;
-          let p = Math.max(0, Math.min(1, t.time / t.dur));
-          let eased = t.ease(p);
-          
-          for (let k in t.props) {
-            if (k !== 'bezier') t.target[k] = t.props[k].s + (t.props[k].e - t.props[k].s) * eased;
-          }
-
-          // Custom Bezier & Array Interpolation Logic
-          if (t.props.bezier) {
-            let vals = t.props.bezier.values || t.props.bezier;
-            let len = vals.length;
-            let f = eased * (len - 1);
-            let idx = Math.floor(f);
-            let perc = f - idx;
-            if (idx >= len - 1) {
-              for(let k in vals[len-1]) t.target[k] = vals[len-1][k];
-            } else {
-              let p0 = vals[idx], p1 = vals[idx+1];
-              for(let k in p0) {
-                if (t.props.bezier.type === "cubic" && len === 4) {
-                  let e = eased, me = 1 - e;
-                  t.target[k] = me*me*me*vals[0][k] + 3*me*me*e*vals[1][k] + 3*me*e*e*vals[2][k] + e*e*e*vals[3][k];
-                } else {
-                  t.target[k] = p0[k] + (p1[k] - p0[k]) * perc;
-                }
-              }
-            }
-          }
-
-          if (t.onUpdate) t.onUpdate();
-          if ((t.dir === 1 && p === 1) || (t.dir === -1 && p === 0)) {
-            if (t.yoyo && t.repCount < t.repeat * 2 + 1) { t.dir *= -1; t.repCount++; } 
-            else if (!t.yoyo && t.repCount < t.repeat) { t.time = 0; t.repCount++; } 
-            else { if (t.onComplete) t.onComplete.apply(null, t.onCompleteParams || []); tweens.splice(i, 1); }
-          }
-        }
-      }
-      return { to, killTweensOf, update, Easing };
-    })();
-
-    var TweenMax = { to: MiniTween.to, killTweensOf: MiniTween.killTweensOf };
-    var TweenLite = TweenMax;
-    var Power4 = { easeOut: MiniTween.Easing.easeOutQuad, easeInOut: MiniTween.Easing.easeInOutQuad, easeIn: MiniTween.Easing.easeInQuad };
-    var Strong = { easeOut: MiniTween.Easing.easeOutStrong, easeInOut: MiniTween.Easing.easeInOutStrong, easeIn: MiniTween.Easing.easeInStrong };
-    var Back = { easeOut: MiniTween.Easing.easeOutBack };
-
     // --- MAIN ENGINE ---
     var scene, camera, renderer, container, clock;
     var env, floor, dragon, sneezingRate = 0, fireRate = 0, maxSneezingRate = 8, sneezeDelay = 500, awaitingSmokeParticles = [], timeSmoke = 0, timeFire = 0, globalSpeedRate = 1, sneezeTimeout, powerField;
@@ -2741,8 +2599,6 @@ export const DRAGON_3D_CODE = `<!DOCTYPE html>
     function loop() {
       if(!isPlaying) { requestAnimationFrame(loop); return; }
       var dt = clock.getDelta();
-      MiniTween.update(dt);
-      
       // Native smooth rotation
       dragon.threegroup.rotation.y += (targetRotation - dragon.threegroup.rotation.y) * 0.1;
 
@@ -2798,72 +2654,17 @@ export const BIRDS_3D_CODE = `<!DOCTYPE html>
       color: #b75505; font-size: 1.1em; text-transform: uppercase; text-align: center;
       line-height: 1.5; user-select: none; z-index: 100; pointer-events: none;
     }
-   
+
   </style>
   <script src="./three.min.js"><\/script>
+  <script src="./TweenMax.min.js"><\/script>
 </head>
 <body>
   <div id="world"></div>
   <div id="instructions">What you doing here ?/></div>
 
   <script>
-    // --- CUSTOM MINI-TWEEN ENGINE (Zero Dependencies) ---
-    const MiniTween = (function() {
-      let tweens = [];
-      const Easing = {
-        easeOutQuad: t => t * (2 - t), easeInQuad: t => t * t, easeInOutQuad: t => t < .5 ? 2 * t * t : -1 + (4 - 2 * t) * t,
-        easeOutStrong: t => 1 - Math.pow(1 - t, 5), easeInStrong: t => Math.pow(t, 5), easeInOutStrong: t => t < .5 ? 16 * Math.pow(t, 5) : 1 - Math.pow(-2 * t + 2, 5) / 2
-      };
-      function parseVal(start, val) {
-        if (typeof val === 'string') {
-          if (val.startsWith('+=')) return start + parseFloat(val.substring(2));
-          if (val.startsWith('-=')) return start - parseFloat(val.substring(2));
-        } return parseFloat(val);
-      }
-      function to(targets, duration, vars) {
-        if (!Array.isArray(targets)) targets = [targets];
-        targets.forEach(target => {
-          let props = {};
-          for (let k in vars) {
-            if (!['ease','delay','onComplete','onUpdate','yoyo','repeat','onCompleteParams'].includes(k)) {
-              props[k] = { s: target[k], e: parseVal(target[k], vars[k]) };
-            }
-          }
-          tweens.push({ target, props, dur: duration, ease: vars.ease || Easing.easeOutQuad, delay: vars.delay || 0, time: 0, dir: 1, repeat: vars.repeat || 0, repCount: 0, yoyo: vars.yoyo, onComplete: vars.onComplete, onCompleteParams: vars.onCompleteParams, onUpdate: vars.onUpdate });
-        });
-      }
-      function killTweensOf(targets) {
-        if(!Array.isArray(targets)) targets = [targets];
-        tweens = tweens.filter(t => !targets.includes(t.target));
-      }
-      function update(dt) {
-        for (let i = tweens.length - 1; i >= 0; i--) {
-          let t = tweens[i];
-          if (t.delay > 0) { t.delay -= dt; continue; }
-          t.time += dt * t.dir;
-          let p = Math.max(0, Math.min(1, t.time / t.dur));
-          let eased = t.ease(p);
-          
-          for (let k in t.props) {
-            t.target[k] = t.props[k].s + (t.props[k].e - t.props[k].s) * eased;
-          }
-
-          if (t.onUpdate) t.onUpdate();
-          if ((t.dir === 1 && p === 1) || (t.dir === -1 && p === 0)) {
-            if (t.yoyo && t.repCount < t.repeat * 2 + 1) { t.dir *= -1; t.repCount++; } 
-            else if (!t.yoyo && t.repCount < t.repeat) { t.time = 0; t.repCount++; } 
-            else { if (t.onComplete) t.onComplete.apply(null, t.onCompleteParams || []); tweens.splice(i, 1); }
-          }
-        }
-      }
-      return { to, killTweensOf, update, Easing };
-    })();
-
-    var TweenMax = { to: MiniTween.to, killTweensOf: MiniTween.killTweensOf };
-    var Strong = { easeOut: MiniTween.Easing.easeOutStrong, easeInOut: MiniTween.Easing.easeInOutStrong, easeIn: MiniTween.Easing.easeInStrong };
-    // -----------------------------------------------------------
-
-    //THREEJS RELATED VARIABLES 
+    //THREEJS RELATED VARIABLES
     var scene, camera, fieldOfView, aspectRatio, nearPlane, farPlane, shadowLight, backLight, light, renderer, container;
     var clock = new THREE.Clock();
 
@@ -3156,7 +2957,6 @@ export const BIRDS_3D_CODE = `<!DOCTYPE html>
       if(!isPlaying) { requestAnimationFrame(loop); return; } // Save Battery
       
       var dt = clock.getDelta();
-      MiniTween.update(dt);
 
       var tempHA = (mousePos.x-windowHalfX)/200;
       var tempVA = (mousePos.y - windowHalfY)/200;
