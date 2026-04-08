@@ -5,5 +5,4 @@
 -->
 <wallpaper xmlns:android="http://schemas.android.com/apk/res/android"
     android:label="Vibe Wallpaper"
-    android:description="@string/app_name"
-    android:thumbnail="@mipmap/ic_launcher" />
+    android:description="@string/wallpaper_description" />
