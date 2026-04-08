@@ -1,6 +1,5 @@
 import * as WallpaperEngine from '@/modules/wallpaper-engine/src';
 import { Wallpaper } from '@/types';
-import { Asset } from 'expo-asset'; // 👈 Added expo-asset
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
@@ -16,44 +15,32 @@ interface WallpaperCardProps {
 
 const WALLPAPER_DIR = `${FileSystem.documentDirectory || ''}wallpaper/`;
 const INDEX_HTML_PATH = `${WALLPAPER_DIR}index.html`;
+const THREE_JS_PATH = `${WALLPAPER_DIR}three.min.js`;
 
 const WallpaperCard = React.memo(({ item, index, colors, onPress }: WallpaperCardProps) => {
 
     const handlePress = async () => {
         if (item.type === 'interactive' && item.indexCode && Platform.OS === 'android') {
             try {
-                // 1. Ensure directory exists
+                // 1. Ensure HTML directory exists
                 const dirInfo = await FileSystem.getInfoAsync(WALLPAPER_DIR);
                 if (!dirInfo.exists) {
                     await FileSystem.makeDirectoryAsync(WALLPAPER_DIR, { intermediates: true });
                 }
 
-                let finalHtmlCode = item.indexCode;
-                const threeCdnLink = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r75/three.min.js';
+                // 2. THE PUBLIC FOLDER MAGIC (Now with both engines!)
+                const androidThreeUrl = 'file:///android_asset/three.min.js';
+                const androidTweenUrl = 'file:///android_asset/TweenMax.min.js';
 
-                // 2. OFFLINE BYPASS: Intercept Three.js CDN and replace with local file
-                if (finalHtmlCode.includes(threeCdnLink)) {
-                    try {
-                        // Resolve the local file from our assets folder
-                        const threeAsset = Asset.fromModule(require('@/assets/web/three.min.js'));
-                        await threeAsset.downloadAsync();
+                let finalHtmlCode = item.indexCode
+                    // Replace Three.js paths
+                    .replace('https://cdnjs.cloudflare.com/ajax/libs/three.js/r75/three.min.js', androidThreeUrl)
+                    .replace('./three.min.js', androidThreeUrl)
+                    // Replace TweenMax paths
+                    .replace('https://cdnjs.cloudflare.com/ajax/libs/gsap/1.19.1/TweenMax.min.js', androidTweenUrl)
+                    .replace('./TweenMax.min.js', androidTweenUrl);
 
-                        const threeLocalPath = `${WALLPAPER_DIR}three.min.js`;
-
-                        // Copy the asset to our hidden wallpaper directory
-                        await FileSystem.copyAsync({
-                            from: threeAsset.localUri || threeAsset.uri,
-                            to: threeLocalPath
-                        });
-
-                        // Rewrite the HTML to look for the local file instead of the internet
-                        finalHtmlCode = finalHtmlCode.replace(threeCdnLink, './three.min.js');
-                    } catch (assetError) {
-                        console.warn('[WallpaperCard] Could not load local three.js asset, falling back to CDN.', assetError);
-                    }
-                }
-
-                // 3. Write HTML to file
+                // 3. Write ONLY the HTML to file
                 await FileSystem.writeAsStringAsync(INDEX_HTML_PATH, finalHtmlCode, {
                     encoding: FileSystem.EncodingType.UTF8,
                 });
@@ -71,11 +58,10 @@ const WallpaperCard = React.memo(({ item, index, colors, onPress }: WallpaperCar
                 return;
             } catch (error) {
                 console.error('[WallpaperCard] Failed to bypass to native preview:', error);
-                // Fallback to standard preview if native bypass fails
             }
         }
 
-        // Default behavior: Open standard preview
+        // Default behavior: Open standard preview for 2D images
         onPress();
     };
 
