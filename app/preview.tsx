@@ -12,7 +12,7 @@ import WallpaperCard from '@/components/WallpaperCard';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import React, { useState, useCallback, useEffect } from 'react';
-import { FlatList, RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View, Platform } from 'react-native';
+import { ActivityIndicator, FlatList, RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View, Platform } from 'react-native';
 import { fetchHomeCategories, getCachedCategories } from '@/services/categoryService';
 import { fetchWallpapersByCategory, getCachedWallpapers } from '@/services/wallpaperService';
 import { Category, Wallpaper } from '@/types';
@@ -83,6 +83,9 @@ export default function PreviewScreen() {
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [isSheetVisible, setIsSheetVisible] = useState(false);
     const [pendingUrl, setPendingUrl] = useState<string | null>(null);
+    const [page, setPage] = useState(1);
+    const [hasMore, setHasMore] = useState(true);
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
     const { showToast } = useToast();
     const { colors } = useTheme();
     const { i18n } = useTranslation();
@@ -110,28 +113,41 @@ export default function PreviewScreen() {
         }
     }, [isBrowseAll, i18n.language]);
 
-    const loadWallpapers = useCallback(async (showSkeleton = true) => {
+    const PAGE_SIZE = 20;
+
+    const loadWallpapers = useCallback(async (showSkeleton = true, pageNum = 1) => {
         try {
             if (showSkeleton) setIsLoading(true);
+            if (pageNum > 1) setIsLoadingMore(true);
             setError(null);
 
-            // 1. Try to load from cache first for instant feedback
-            const cached = await getCachedWallpapers(selectedCategoryId);
-            if (cached && cached.length > 0) {
-                setWallpapers(cached);
-                if (showSkeleton) setIsLoading(false);
+            // Load from cache only on first page
+            if (pageNum === 1) {
+                const cached = await getCachedWallpapers(selectedCategoryId);
+                if (cached && cached.length > 0) {
+                    setWallpapers(cached);
+                    if (showSkeleton) setIsLoading(false);
+                }
             }
 
-            // 2. Fetch fresh data from network
             const data = await fetchWallpapersByCategory(
                 selectedCategoryId, 
-                1, 
-                20,
-                (freshData: Wallpaper[]) => {
-                    setWallpapers(freshData);
-                }
+                pageNum, 
+                PAGE_SIZE,
             );
-            setWallpapers(data);
+
+            if (pageNum === 1) {
+                setWallpapers(data);
+            } else {
+                setWallpapers(prev => {
+                    const existingIds = new Set(prev.map(w => w._id));
+                    const newItems = data.filter(w => !existingIds.has(w._id));
+                    return [...prev, ...newItems];
+                });
+            }
+
+            setHasMore(data.length >= PAGE_SIZE);
+            setPage(pageNum);
         } catch (err) {
             console.error('[Preview] Load wallpapers error:', err);
             if (wallpapers.length === 0) {
@@ -140,17 +156,28 @@ export default function PreviewScreen() {
         } finally {
             setIsLoading(false);
             setIsRefreshing(false);
+            setIsLoadingMore(false);
         }
     }, [selectedCategoryId]);
 
     useEffect(() => {
-        loadWallpapers();
+        setPage(1);
+        setHasMore(true);
+        loadWallpapers(true, 1);
     }, [loadWallpapers]);
 
     const onRefresh = useCallback(() => {
         setIsRefreshing(true);
-        loadWallpapers(false);
+        setPage(1);
+        setHasMore(true);
+        loadWallpapers(false, 1);
     }, [loadWallpapers]);
+
+    const loadMore = useCallback(() => {
+        if (!isLoadingMore && hasMore && !isLoading) {
+            loadWallpapers(false, page + 1);
+        }
+    }, [isLoadingMore, hasMore, isLoading, page, loadWallpapers]);
 
     const handleImagePress = useCallback((index: number) => {
         router.push({ 
@@ -283,6 +310,8 @@ export default function PreviewScreen() {
                         initialNumToRender={6}
                         maxToRenderPerBatch={10}
                         windowSize={10}
+                        onEndReached={loadMore}
+                        onEndReachedThreshold={0.5}
                         refreshControl={
                             <RefreshControl
                                 refreshing={isRefreshing}
@@ -290,6 +319,13 @@ export default function PreviewScreen() {
                                 tintColor={colors.primary}
                                 colors={[colors.primary]}
                             />
+                        }
+                        ListFooterComponent={
+                            isLoadingMore ? (
+                                <View style={{ paddingVertical: 20, alignItems: 'center' }}>
+                                    <ActivityIndicator size="small" color={colors.primary} />
+                                </View>
+                            ) : null
                         }
                         ListEmptyComponent={() => (
                             <View style={[commonStyles.centerAlign, { marginTop: 100 }]}>

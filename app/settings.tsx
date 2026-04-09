@@ -10,6 +10,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CATEGORIES } from '@/services/mockData';
 import { ActivityIndicator } from 'react-native';
 import * as Device from 'expo-device';
+import * as Haptics from 'expo-haptics';
 import Constants from 'expo-constants';
 
 export default function SettingsScreen() {
@@ -182,7 +183,10 @@ export default function SettingsScreen() {
                         icon={notificationsEnabled ? "notifications" : "notifications-off-outline"} 
                         label={t('settings.notifications')} 
                         value={notificationsEnabled ? t('settings.enabled') : t('settings.disabled')} 
-                        onPress={() => setNotificationsEnabled(!notificationsEnabled)}
+                        onPress={() => {
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                            setNotificationsEnabled(!notificationsEnabled);
+                        }}
                     />
                     <SettingItem 
                         icon="language-outline" 

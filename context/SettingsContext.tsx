@@ -1,7 +1,7 @@
 import { Colors } from '@/constants/Colors';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
+import React, { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { useColorScheme } from 'react-native';
 
 // --- Types ---
@@ -76,7 +76,7 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
     }, [eventsEnabled]);
 
     // --- Helper Functions & Computed Values ---
-    const toggleLockScreenCategory = (id: string) => {
+    const toggleLockScreenCategory = useCallback((id: string) => {
         setLockScreenCategories(prev => {
             if (prev.includes(id)) {
                 return prev.filter(catId => catId !== id);
@@ -86,7 +86,7 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
             }
             return [...prev, id];
         });
-    };
+    }, []);
 
     const isDark = themeMode === 'system'
         ? systemColorScheme === 'dark'
@@ -94,18 +94,19 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
 
     const colors = isDark ? Colors.dark : Colors.light;
 
-    return (
-        <SettingsContext.Provider
-            value={{
+    const value = useMemo<SettingsState>(() => ({
+        themeMode, setThemeMode,
+        notificationsEnabled, setNotificationsEnabled,
+        lockScreenCategories, toggleLockScreenCategory,
+        eventsEnabled, setEventsEnabled,
+        isDark, colors
+    }), [
+        themeMode, notificationsEnabled, lockScreenCategories,
+        eventsEnabled, isDark, colors, toggleLockScreenCategory
+    ]);
 
-                // Theme & App Settings
-                themeMode, setThemeMode,
-                notificationsEnabled, setNotificationsEnabled,
-                lockScreenCategories, toggleLockScreenCategory,
-                eventsEnabled, setEventsEnabled,
-                isDark, colors
-            }}
-        >
+    return (
+        <SettingsContext.Provider value={value}>
             {children}
         </SettingsContext.Provider>
     );

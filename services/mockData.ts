@@ -3006,6 +3006,520 @@ export const MOCK_CATEGORIES: Category[] = [
   },
 ];
 
+export const SATURN_3D_CODE = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(#2a3340, #172533);
+      overflow: hidden;
+      touch-action: none; /* Prevents native mobile scrolling */
+    }
+    #world {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      z-index: 1;
+    }
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw !important;
+      height: 100vh !important;
+      z-index: 99 !important;
+      display: block;
+    }
+  </style>
+  
+  <script src="./three.min.js"><\/script>
+  
+</head>
+<body>
+  <div id="world"></div>
+
+  <script>
+    // --- SCENE PARAMETERS (Hardcoded, GUI removed) ---
+    var parameters = {
+      minRadius : 30,
+      maxRadius : 50,
+      minSpeed: .015,
+      maxSpeed: .025,
+      particles: 300,
+      minSize: .1,
+      maxSize: 2,
+    };
+
+    var Colors = {
+      green : 0x8fc999,
+      blue : 0x5fc4d0,
+      orange : 0xee5624,
+      yellow : 0xfaff70,
+    };
+    var colorsLength = Object.keys(Colors).length;
+
+    function getMat(color){
+      return new THREE.MeshLambertMaterial({
+        color: color,
+        shading: THREE.FlatShading
+      });
+    }
+
+    function getRandomColor(){
+      var colIndx = Math.floor(Math.random()*colorsLength);
+      var colorStr = Object.keys(Colors)[colIndx];
+      return Colors[colorStr];
+    }
+
+    var scene, renderer, camera, saturn, light;
+    var WIDTH, HEIGHT;
+    var isPlaying = true; // Battery optimization
+
+    function initWorld(){
+      scene = new THREE.Scene();
+      
+      HEIGHT = window.innerHeight || window.screen.height;
+      WIDTH = window.innerWidth || window.screen.width;
+      
+      camera = new THREE.PerspectiveCamera(75, WIDTH/HEIGHT, .1, 2000);
+      
+      // MOBILE ZOOM TRICK: Pull camera back on narrow screens
+      camera.position.z = (WIDTH < 600) ? 180 : 100;
+      camera.position.y = 20; // Lift camera slightly for better angle
+      camera.lookAt(new THREE.Vector3(0, 0, 0));
+      
+      renderer = new THREE.WebGLRenderer({ 
+        alpha: true, 
+        antialias: true 
+      });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+      renderer.setSize(WIDTH, HEIGHT);
+      renderer.shadowMap.enabled = true;
+      
+      var container = document.getElementById('world');
+      container.appendChild(renderer.domElement);  
+      
+      // LIGHTS
+      var ambientLight = new THREE.AmbientLight(0x663344, 2);
+      scene.add(ambientLight);
+      
+      light = new THREE.DirectionalLight(0xffffff, 1.5);
+      light.position.set(200, 100, 200);
+      light.castShadow = true;
+      light.shadow.camera.left = -400;
+      light.shadow.camera.right = 400;
+      light.shadow.camera.top = 400;
+      light.shadow.camera.bottom = -400;
+      light.shadow.camera.near = 1;
+      light.shadow.camera.far = 1000;
+      light.shadow.mapSize.width = 1024;
+      light.shadow.mapSize.height = 1024;
+      scene.add(light);
+      
+      // EVENTS
+      window.addEventListener('resize', handleWindowResize, false);
+      window.addEventListener("pauseWallpaper", () => isPlaying = false);
+      window.addEventListener("playWallpaper", () => {
+        if(!isPlaying){ isPlaying = true; loop(); }
+      });
+
+      // CREATE SATURN
+      saturn = new Saturn();
+      saturn.mesh.rotation.x = .2;
+      saturn.mesh.rotation.z = .2;
+      scene.add(saturn.mesh);
+    }
+
+    var Saturn = function(){
+      var geomPlanet = new THREE.TetrahedronGeometry(20, 2);
+      
+      var noise = 5;
+      for(var i=0; i<geomPlanet.vertices.length; i++){
+        var v = geomPlanet.vertices[i];
+        v.x += -noise/2 + Math.random()*noise;
+        v.y += -noise/2 + Math.random()*noise;
+        v.z += -noise/2 + Math.random()*noise;
+      }
+
+      var matPlanet = getMat(Colors.orange);
+      this.planet = new THREE.Mesh(geomPlanet, matPlanet);
+
+      this.ring = new THREE.Mesh();
+      this.nParticles = 0;
+
+      this.updateParticlesCount();
+      
+      this.mesh = new THREE.Object3D();
+      this.mesh.add(this.planet);
+      this.mesh.add(this.ring);
+
+      this.planet.castShadow = true;
+      this.planet.receiveShadow = true;
+
+      this.updateParticlesRotation();
+    }
+
+    Saturn.prototype.updateParticlesCount = function(){
+      if (this.nParticles < parameters.particles){
+        for (var i=this.nParticles; i< parameters.particles; i++){
+          var p = new Particle();
+          p.mesh.rotation.x = Math.random()*Math.PI;
+          p.mesh.rotation.y = Math.random()*Math.PI;
+          p.mesh.position.y = -2 + Math.random()*4;
+          this.ring.add(p.mesh);
+        }
+      } else {
+        while(this.nParticles > parameters.particles){
+          var m = this.ring.children[this.nParticles-1];
+          this.ring.remove(m);
+          m.userData.po = null;
+          this.nParticles--;
+        }
+      }
+      this.nParticles = parameters.particles;
+      this.angleStep = Math.PI*2/this.nParticles;
+      this.updateParticlesDefiniton();
+    }
+
+    Saturn.prototype.updateParticlesDefiniton = function(){
+      for(var i=0; i<this.nParticles; i++){
+        var m = this.ring.children[i];
+        var s = parameters.minSize + Math.random()*(parameters.maxSize - parameters.minSize);
+        m.scale.set(s,s,s);
+        
+        m.userData.distance = parameters.minRadius +  Math.random()*(parameters.maxRadius-parameters.minRadius);
+        m.userData.angle = this.angleStep*i;
+        m.userData.angularSpeed = rule3(m.userData.distance, parameters.minRadius, parameters.maxRadius, parameters.minSpeed, parameters.maxSpeed);
+      }
+    }
+
+    var Particle = function(){
+      var s = 1;
+      var geom, random = Math.random();
+
+      if (random < .25) { geom = new THREE.BoxGeometry(s,s,s); }
+      else if (random < .5) { geom = new THREE.CylinderGeometry(0,s,s*2, 4, 1); }
+      else if (random < .75) { geom = new THREE.TetrahedronGeometry(s,2); }
+      else { geom = new THREE.BoxGeometry(s/6,s,s); }
+      
+      var color = getRandomColor();
+      var mat = getMat(color);
+
+      this.mesh = new THREE.Mesh(geom, mat);
+      this.mesh.receiveShadow = true;
+      this.mesh.castShadow = true;
+      this.mesh.userData.po = this;
+    }
+
+    Saturn.prototype.updateParticlesRotation = function(){
+      for(var i=0; i<this.nParticles; i++){
+        var m = this.ring.children[i];
+        m.userData.angle += m.userData.angularSpeed;
+
+        var posX = Math.cos(m.userData.angle)*m.userData.distance;
+        var posZ = Math.sin(m.userData.angle)*m.userData.distance;
+        m.position.x = posX;
+        m.position.z = posZ;
+
+        m.rotation.x += Math.random()*.05;
+        m.rotation.y += Math.random()*.05;
+        m.rotation.z += Math.random()*.05;
+      }
+    }
+
+    function loop(){
+      if(!isPlaying) { requestAnimationFrame(loop); return; } // Save battery
+
+      // Auto-rotation for wallpaper
+      saturn.planet.rotation.y -= .002;
+      saturn.mesh.rotation.y -= .001; // Slowly rotate the entire ring system
+      saturn.mesh.rotation.x = Math.sin(Date.now() * 0.0003) * 0.15; // Gentle floating effect
+      
+      saturn.updateParticlesRotation();
+      
+      renderer.render(scene, camera);
+      requestAnimationFrame(loop);
+    }
+
+    function handleWindowResize() {
+      HEIGHT = window.innerHeight;
+      WIDTH = window.innerWidth;
+      renderer.setSize(WIDTH, HEIGHT);
+      camera.aspect = WIDTH / HEIGHT;
+      camera.updateProjectionMatrix();
+    }
+
+    function rule3(v,vmin,vmax,tmin, tmax){
+      var nv = Math.max(Math.min(v,vmax), vmin);
+      var dv = vmax-vmin;
+      var pc = (nv-vmin)/dv;
+      var dt = tmax-tmin;
+      return tmin + (pc*dt);
+    }
+
+    // Load instantly (bypassing window.onload bug in Android)
+    setTimeout(() => {
+      initWorld();
+      loop();
+    }, 100);
+
+  <\/script>
+</body>
+</html>`;
+
+
+export const ROCKET_SVG_CODE = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background-color: #22222A;
+      overflow: hidden;
+      touch-action: none; /* CRITICAL: Prevents native scrolling while dragging */
+    }
+    svg {
+      position: absolute;
+      margin: auto;
+      height: 100%;
+      width: 100%;
+      top: 0; bottom: 0; left: 0; right: 0;
+      overflow: visible;
+    }
+    #instructions {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <svg id="illu" viewBox="0 0 1200 1200">
+    <defs>
+      <g id="star">
+        <rect x="9" y="0" fill="#FFE498" width="2" height="20" />
+        <rect x="0" y="9" fill="#FFE498" width="20" height="2" />
+      </g>
+    </defs>
+    <g id="stars"></g>
+    <g id="moon">
+      <circle fill="#ECDFBB" cx="600" cy="600" r="135" />
+      <path fill="#F1DEA3" d="M487.3,621.6c0-74.2,60.1-134.3,134.3-134.3c32.7,0,62.7,11.7,86,31.1C683,486,643.9,465,600,465c-74.6,0-135,60.4-135,135c0,43.9,21,83,53.5,107.6C499,684.3,487.3,654.3,487.3,621.6z" />
+      <ellipse transform="matrix(0.8563 -0.5164 0.5164 0.8563 -187.6616 353.484)" fill="#F1DEA3" cx="541.5" cy="514" rx="24.7" ry="16.1" />
+      <ellipse transform="matrix(-0.4752 -0.8799 0.8799 -0.4752 528.5117 1400.9026)" fill="#F1DEA3" cx="682" cy="542.8" rx="37.7" ry="25.1" />
+      <ellipse transform="matrix(-0.4752 -0.8799 0.8799 -0.4752 496.7872 1306.4282)" fill="#F1DEA3" cx="638" cy="505.1" rx="11.8" ry="11.4" />
+      <ellipse transform="matrix(0.8862 0.4632 -0.4632 0.8862 340.2807 -211.1433)" fill="#F1DEA3" cx="600" cy="587.2" rx="35.3" ry="40.3" />
+      <path fill="#F1DEA3" d="M474.2,550.9c-5.9,15.2-9.2,31.8-9.2,49.1c0,29.6,9.5,56.9,25.7,79.2c24-11.5,38.8-39.7,34.6-70.2C521.1,579,499.8,556.1,474.2,550.9z" />
+      <ellipse fill="#F1DEAE" cx="600" cy="701.3" rx="38" ry="23.6" />
+      <ellipse transform="matrix(0.945 0.327 -0.327 0.945 235.2577 -199.3432)" fill="#F1DEA3" cx="710.5" cy="600" rx="11" ry="14.9" />
+      <path fill="#C3BA95" d="M599.5,683.8c-0.8,0-1.5-0.7-1.5-1.5v-69.9c0-15-12.2-27.2-27.2-27.2c-15,0-27.2,12.2-27.2,27.2c0,0.8-0.7,1.5-1.5,1.5c-0.8,0-1.5-0.7-1.5-1.5c0-16.7,13.6-30.2,30.2-30.2c16.7,0,30.2,13.6,30.2,30.2v69.9C601,683.1,600.3,683.8,599.5,683.8z" />
+      <path fill="#C3BA95" d="M570.5,653.3c-11.8,0-21.4-9.6-21.4-21.4c0-0.8,0.7-1.5,1.5-1.5c0.8,0,1.5,0.7,1.5,1.5c0,10.1,8.2,18.3,18.3,18.3c10.1,0,18.3-8.2,18.3-18.3c0-0.8,0.7-1.5,1.5-1.5c0.8,0,1.5,0.7,1.5,1.5C591.8,643.7,582.3,653.3,570.5,653.3z" />
+      <path fill="#C3BA95" d="M638.2,653.3c-11.8,0-21.4-9.6-21.4-21.4c0-0.8,0.7-1.5,1.5-1.5c0.8,0,1.5,0.7,1.5,1.5c0,10.1,8.2,18.3,18.3,18.3c10.1,0,18.3-8.2,18.3-18.3c0-0.8,0.7-1.5,1.5-1.5c0.8,0,1.5,0.7,1.5,1.5C659.6,643.7,650,653.3,638.2,653.3z" />
+      <path fill="#C3BA95" d="M601.3,731.3c-9.2,0-16.7-7.5-16.7-16.7c0-0.7,0.5-1.2,1.2-1.2c0.7,0,1.2,0.5,1.2,1.2c0,7.9,6.4,14.3,14.3,14.3c7.9,0,14.3-6.4,14.3-14.3c0-0.7,0.5-1.2,1.2-1.2c0.7,0,1.2,0.5,1.2,1.2C618,723.8,610.5,731.3,601.3,731.3z" />
+      <path fill="#C3BA95" d="M599.4,704.5c-31.8,0-60.6-16.2-77.2-43.4c-0.7-1.1-0.3-2.5,0.8-3.2c1.1-0.7,2.5-0.3,3.2,0.8c15.7,25.8,43.1,41.2,73.3,41.2c30.4,0,58.9-16.4,74.2-42.7c0.6-1.1,2-1.5,3.1-0.8c1.1,0.6,1.5,2,0.8,3.1C661.4,687.3,631.4,704.5,599.4,704.5z" />
+      <path fill="#C3BA95" d="M685.3,660.9c-3,0-5.9-0.8-8.5-2.3c-3.9-2.3-6.8-6-7.9-10.3c-1.2-4.4-0.6-9,1.7-12.9c0.6-1.1,2-1.5,3.1-0.8c1.1,0.6,1.5,2,0.8,3.1c-1.7,2.9-2.1,6.2-1.2,9.5c0.9,3.2,2.9,5.9,5.8,7.6c2.9,1.7,6.2,2.1,9.5,1.2c3.2-0.9,5.9-2.9,7.6-5.8c0.6-1.1,2-1.5,3.1-0.8c1.1,0.6,1.5,2,0.8,3.1c-2.3,3.9-6,6.8-10.3,7.9C688.3,660.7,686.8,660.9,685.3,660.9z" />
+      <path fill="#C3BA95" d="M514,661.8c-1.5,0-3-0.2-4.4-0.6c-4.4-1.2-8.1-4-10.3-7.9c-0.6-1.1-0.3-2.5,0.8-3.1c1.1-0.6,2.5-0.3,3.1,0.8c1.7,2.9,4.3,4.9,7.6,5.8c3.2,0.9,6.6,0.4,9.5-1.2c2.9-1.7,4.9-4.3,5.8-7.6c0.9-3.2,0.4-6.6-1.2-9.5c-0.6-1.1-0.3-2.5,0.8-3.1c1.1-0.6,2.5-0.3,3.1,0.8c2.3,3.9,2.9,8.5,1.7,12.9c-1.2,4.4-4,8.1-7.9,10.3C519.9,661,517,661.8,514,661.8z" />
+    </g>
+    <g id="rocket">
+      <g id="fire">
+        <path id="red_fire" fill="#EB6736" d="M921,714.8c0-18.3,14.8-33.1,33.1-33.1c18.3,0,33.1,14.8,33.1,33.1c0,18.3-33.1,59.2-33.1,59.2S921,733.1,921,714.8" />
+        <path id="yellow_fire" fill="#ECA643" d="M954.8,690.9c-9.4,0-16.9,7.6-16.9,17c0,9.4,17,44.5,17,44.5s16.9-35.2,16.9-44.6C971.7,698.4,964.1,690.9,954.8,690.9" />
+      </g>
+      <g id="cosmonaut">
+        <rect x="929.7" y="608.4" transform="matrix(-1 2.445246e-04 -2.445246e-04 -1 1911.4962 1241.0038)" fill="#059F9F" width="51.9" height="24.5" />
+        <circle fill="#F2F2F2" cx="936.6" cy="613.6" r="2.6" />
+        <circle fill="#FF662C" cx="943.1" cy="613.6" r="2.6" />
+        <circle fill="#F5B547" cx="949.6" cy="613.6" r="2.6" />
+        <path fill="#059F9F" d="M985.5,598c0,1.9-1.6,3.5-3.5,3.5l-50.2,0c-1.9,0-3.5-1.6-3.5-3.5l0-46.8c0-1.9,1.6-3.5,3.5-3.5l50.2,0c1.9,0,3.5,1.6,3.5,3.5L985.5,598z" />
+        <path fill="#D8D1C3" d="M981.4,579.2c0,2.1-1.7,3.7-3.7,3.7l-41.5,0c-2,0-3.7-1.7-3.7-3.7l0-19.8c0-2,1.7-3.7,3.7-3.7l41.5,0c2,0,3.7,1.7,3.7,3.7L981.4,579.2z" />
+        <path fill="#79552D" d="M977.7,555.7l-41.5,0c-2,0-3.7,1.7-3.7,3.7l0,8.7c3.8,2.7,8.4,4.3,13.4,4.3c10.4,0,19.1-6.8,22-16.2c0.9,6.8,6.5,12.1,13.4,12.5l0-9.3C981.4,557.4,979.8,555.7,977.7,555.7" />
+        <path fill="#79552D" d="M967.3,558.8c0,3.8-2,7.2-5.1,9c5.3-0.6,9.4-5,9.4-10.4c0-0.5-0.1-1-0.1-1.6l-4.6,0C967.1,556.7,967.3,557.7,967.3,558.8" />
+        <path fill="#79552D" d="M970.2,579.4c-0.6,0-1-0.4-1-1c0-1.5-1.2-2.7-2.7-2.7c-1.5,0-2.7,1.2-2.7,2.7c0,0.6-0.4,1-1,1c-0.6,0-1-0.4-1-1c0-2.6,2.1-4.7,4.7-4.7c2.6,0,4.7,2.1,4.7,4.7C971.2,578.9,970.7,579.4,970.2,579.4z" />
+        <path fill="#79552D" d="M951.2,579.4c-0.6,0-1-0.4-1-1c0-1.5-1.2-2.7-2.7-2.7c-1.5,0-2.7,1.2-2.7,2.7c0,0.6-0.4,1-1,1c-0.6,0-1-0.4-1-1c0-2.6,2.1-4.7,4.7-4.7c2.6,0,4.7,2.1,4.7,4.7C952.2,578.9,951.8,579.4,951.2,579.4z" />
+        <circle fill="#F5B547" cx="978.5" cy="593.1" r="2" />
+        <circle fill="#FF662C" cx="972" cy="593.1" r="2" />
+        <path fill="#5B5757" d="M985.5,564.4l0,10.1c8.4,1.9,14.7,9.4,14.7,18.4c0,10.4-8.4,18.8-18.8,18.8c-10.4,0-18.8-8.4-18.8-18.8c0-2.8-2.2-5-5-5c-2.8,0-5,2.2-5,5c0,15.9,12.9,28.8,28.8,28.8c15.9,0,28.8-12.9,28.8-28.8C1010.2,578.4,999.5,566.4,985.5,564.4z" />
+        <path opacity="0.3" fill="#F2F2F2" d="M945,555.8l-12.5,19.4l0,4.1c0,2.1,1.7,3.7,3.7,3.7l7,0l17.5-27.2L945,555.8z" />
+      </g>
+      <g id="cabin">
+        <path fill="#0E9E9F" d="M855.9,722c-16-43-5.9-87.3,21.3-120.3l24.8,66.5c-17.5,6.5-26.2,26.4-19.7,43.9L855.9,722z" />
+        <path fill="#0E9E9F" d="M1054.6,721.9c16-43,5.8-87.3-21.5-120.3l-24.7,66.6c17.5,6.5,26.3,26.4,19.8,43.9L1054.6,721.9z" />
+        <rect x="896.4" y="552" transform="matrix(0.7067 -0.7075 0.7075 0.7067 -122.3782 822.5777)" opacity="0.2" fill="#FFFFFF" width="69" height="13.8" />
+        <rect x="899.7" y="567.4" transform="matrix(0.7067 -0.7075 0.7075 0.7067 -126.8512 833.3998)" opacity="0.2" fill="#FFFFFF" width="84" height="4.5" />
+        <path fill="#0A7370" d="M955.5,430.6c-52.1,30.2-87.1,86.5-87,150.9c0,32.5,8.9,62.9,24.4,88.9l125.5-0.1c15.5-26,24.3-56.4,24.3-88.9C1042.6,517,1007.5,460.7,955.5,430.6z M955.6,625.4c-26.2,0-47.5-21.2-47.5-47.5c0-26.2,21.2-47.5,47.5-47.5c26.2,0,47.5,21.2,47.5,47.5C1003.1,604.1,981.8,625.4,955.6,625.4z" />
+        <path fill="#0E9E9F" d="M959.1,426c-2.2,1.3-4.3,2.6-6.4,3.9l0.1,96.3c2.1-0.3,4.3-0.4,6.4-0.4c26.2,0,47.5,21.2,47.5,47.5c0,8.9-2.5,17.3-6.7,24.4l45.1,0c0.8-6.8,1.2-13.8,1.2-20.8C1046.3,512.3,1011.2,456.1,959.1,426z" />
+        <path fill="#2B2A2A" d="M955.5,520.8c-32.5,0-58.9,26.4-58.8,58.9c0,32.5,26.4,58.9,58.9,58.8c32.5,0,58.9-26.4,58.8-58.9C1014.4,547.2,988,520.8,955.5,520.8z M955.6,620.5c-22.5,0-40.8-18.2-40.8-40.7c0-22.5,18.2-40.8,40.7-40.8c22.5,0,40.8,18.2,40.8,40.7C996.3,602.2,978.1,620.5,955.6,620.5z" />
+        <g>
+          <path fill="#FFFFFF" d="M905.3,591.7c-0.4,0-0.8-0.2-1-0.5l-17.2-21.3c-0.5-0.6-0.4-1.4,0.2-1.8c0.6-0.5,1.4-0.4,1.8,0.2l17.2,21.3c0.5,0.6,0.4,1.4-0.2,1.8C905.9,591.6,905.6,591.7,905.3,591.7" />
+          <path fill="#FFFFFF" d="M887.5,591.7c-0.3,0-0.6-0.1-0.9-0.3c-0.5-0.5-0.6-1.3-0.1-1.8l18.4-21.3c0.5-0.5,1.3-0.6,1.8-0.1c0.5,0.5,0.6,1.3,0.1,1.8l-18.4,21.3C888.2,591.5,887.8,591.7,887.5,591.7" />
+        </g>
+        <circle fill="#2B2A2A" cx="959.9" cy="442.8" r="4.5" />
+        <circle fill="#2B2A2A" cx="959.9" cy="475.5" r="4.5" />
+        <circle fill="#2B2A2A" cx="959.9" cy="508.1" r="4.5" />
+        <circle fill="#2B2A2A" cx="1039" cy="590.9" r="3.7" />
+        <rect x="1009.4" y="558.8" fill="#2B2A2A" width="12.7" height="43" />
+        <rect x="934.3" y="670.4" fill="#2B2A2A" width="42.6" height="4.4" />
+        <circle fill="#2B2A2A" cx="1044.4" cy="704.2" r="4.5" />
+        <circle fill="#2B2A2A" cx="867" cy="709" r="4.5" />
+      </g>
+    </g>
+  </svg>
+  <div id="instructions">Throw the rocket</div>
+
+  <script>
+    // --- CUSTOM MICRO-PHYSICS & ANIMATION ENGINE ---
+    // Replaces 150kb of GSAP, Draggable, and ThrowProps
+    let rocket, fire, yellowFire, stars, smoke;
+    let isPlaying = true;
+    let autoRotate = true;
+    let rocketRotation = 0;
+    let rotationVelocity = 0.2; // Slow orbit speed
+    let t = 0;
+
+    // Battery Optimization
+    window.addEventListener("pauseWallpaper", () => isPlaying = false);
+    window.addEventListener("playWallpaper", () => {
+      if(!isPlaying){ isPlaying = true; loop(); }
+    });
+
+    function updateRocketTransform() {
+      // Orbit around the Moon (600, 600).
+      // Translate(477.5, 310) scale(0.5) keeps the scaled rocket perfectly relative to its original coordinate base.
+      rocket.setAttribute("transform", \`rotate(\${rocketRotation}, 600, 600) translate(477.5, 310) scale(0.5)\`);
+    }
+
+    // --- PARTICLE SYSTEM ---
+    class Particle {
+      constructor(isStar = true) {
+        this.isStar = isStar;
+        const xmlns = "http://www.w3.org/2000/svg";
+        this.el = document.createElementNS(xmlns,"use");
+        this.el.setAttribute('href', '#star');
+        stars.appendChild(this.el);
+        this.reset();
+      }
+
+      reset() {
+        this.time = 0;
+        this.active = true;
+        if (this.isStar) {
+          const ray = 200 + Math.random() * 200;
+          const angle = Math.random() * Math.PI * 2;
+          this.x = 600 + Math.cos(angle) * ray;
+          this.y = 600 + Math.sin(angle) * ray;
+          this.life = 60; // frames
+        } else {
+          this.x = 955;
+          this.y = 730;
+          this.life = 30; // frames
+          this.scale = 2.5;
+        }
+        this.updateDOM();
+      }
+
+      update() {
+        if (!this.active) return;
+        this.time++;
+        const progress = this.time / this.life;
+
+        if (this.isStar) {
+          // Fade in then out, scale up then down
+          const opacity = progress < 0.5 ? progress * 2 : 2 - (progress * 2);
+          const scale = progress < 0.5 ? progress * 2 : 2 - (progress * 2);
+          this.el.setAttribute("transform", \`translate(\${this.x}, \${this.y}) scale(\${scale})\`);
+          this.el.setAttribute("opacity", opacity);
+        } else {
+          // Smoke flies down and scales down
+          this.y += 5 + Math.random() * 2;
+          this.x += -2 + Math.random() * 4;
+          this.scale = Math.max(0, 2.5 * (1 - progress));
+          const opacity = 1 - progress;
+          this.el.setAttribute("transform", \`translate(\${this.x}, \${this.y}) scale(\${this.scale})\`);
+          this.el.setAttribute("opacity", opacity);
+          this.el.setAttribute("fill", progress > 0.5 ? "#000000" : "#EA4E39");
+        }
+
+        if (this.time >= this.life) {
+          this.active = false;
+          this.el.setAttribute("opacity", 0);
+        }
+      }
+
+      updateDOM() {
+        if(this.isStar) {
+          this.el.setAttribute("transform", \`translate(\${this.x}, \${this.y}) scale(0)\`);
+          this.el.setAttribute("opacity", 0);
+        }
+      }
+    }
+
+    const starParticles = [];
+
+    function spawnParticle(isStar) {
+      if (!isStar) return;
+      const deadParticle = starParticles.find(p => !p.active);
+      if (deadParticle) deadParticle.reset();
+    }
+
+    // --- MAIN LOOP ---
+    function loop() {
+      if (!isPlaying) { requestAnimationFrame(loop); return; }
+      t++;
+
+      // Spawn Stars
+      if (t % 20 === 0) spawnParticle(true);
+      
+      // Update all particles
+      starParticles.forEach(p => p.update());
+
+      // Fire Animation
+      const absoluteSpeed = Math.abs(rotationVelocity);
+      const fireScaleY = Math.min(1.5, 0.8 + Math.random() * 0.3 + absoluteSpeed / 20);
+      const fireScaleX = Math.max(0.4, Math.min(1, 1 - absoluteSpeed / 50));
+      const yellowScale = 0.8 + Math.random() * 0.3;
+      
+      fire.setAttribute("transform", \`translate(950, 680) scale(\${fireScaleX}, \${fireScaleY}) translate(-950, -680)\`);
+      yellowFire.setAttribute("transform", \`translate(950, 680) scale(\${yellowScale}) rotate(\${-20 + yellowScale * 20}) translate(-950, -680)\`);
+
+      // Orbit Physics
+      rocketRotation -= rotationVelocity;
+      updateRocketTransform();
+
+      requestAnimationFrame(loop);
+    }
+
+    setTimeout(() => {
+      rocket = document.getElementById("rocket"); 
+      fire = document.getElementById("fire");
+      yellowFire = document.getElementById("yellow_fire"); 
+      stars = document.getElementById("stars");
+
+      // Pre-scale the rocket so it fits nicely on screen
+      rocket.setAttribute("transform", "translate(200, 0) scale(0.5)");
+
+      // Initialize stars
+      for (let i = 0; i < 10; i++) {
+        starParticles.push(new Particle());
+      }
+
+      updateRocketTransform();
+      loop();
+    }, 100);
+
+  <\/script>
+</body>
+</html>`;
+
 export const MOCK_WALLPAPERS: Wallpaper[] = [
 
   {
@@ -3052,6 +3566,24 @@ export const MOCK_WALLPAPERS: Wallpaper[] = [
     type: 'interactive',
     category: { id: 'live', name: { en: 'Interactive' } },
     indexCode: BIRDS_3D_CODE
+  },
+  {
+    _id: 'html_saturn',
+    url: 'https://images.unsplash.com/photo-1517482811403-125032338167?q=80&w=1080', // Replace with a nice cartoon sky image
+    thumbnail: 'https://images.unsplash.com/photo-1517482811403-125032338167?q=80&w=400',
+    author: 'Toss Studio',
+    type: 'interactive',
+    category: { id: 'live', name: { en: 'Interactive' } },
+    indexCode: SATURN_3D_CODE
+  },
+  {
+    _id: 'html_rocket_moon',
+    url: 'https://images.unsplash.com/photo-1517482811403-125032338167?q=80&w=1080', // Replace with a nice cartoon sky image
+    thumbnail: 'https://images.unsplash.com/photo-1517482811403-125032338167?q=80&w=400',
+    author: 'Toss Studio',
+    type: 'interactive',
+    category: { id: 'live', name: { en: 'Interactive' } },
+    indexCode: ROCKET_SVG_CODE
   },
   {
     _id: 'html_dragon',

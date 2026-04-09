@@ -217,14 +217,23 @@ class HtmlWallpaperService : WallpaperService() {
         // ── Touch Forwarding ──────────────────────────────────────────────────
 
         override fun onTouchEvent(event: MotionEvent) {
-            mainHandler.post { webView?.dispatchTouchEvent(event) }
+            // CRITICAL: MotionEvent objects are recycled by the framework after
+            // onTouchEvent returns. We must copy before posting to the handler.
+            val eventCopy = MotionEvent.obtain(event)
+            mainHandler.post {
+                try {
+                    webView?.dispatchTouchEvent(eventCopy)
+                } finally {
+                    eventCopy.recycle()
+                }
+            }
         }
 
         // ── GPU Accelerated WebView ───────────────────────────────────────────
 
         @SuppressLint("SetJavaScriptEnabled")
         private fun setupWebView(displayContext: Context) {
-            webView = WebView(this@HtmlWallpaperService).apply {
+            webView = WebView(displayContext).apply {
                 setLayerType(View.LAYER_TYPE_HARDWARE, null)
                 setBackgroundColor(android.graphics.Color.TRANSPARENT)
 
