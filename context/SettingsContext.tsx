@@ -22,6 +22,11 @@ export interface SettingsState {
     setEventsEnabled: (enabled: boolean) => void;
     isDark: boolean;
     colors: typeof Colors.light;
+
+    // Onboarding
+    hasOnboarded: boolean;
+    setHasOnboarded: (value: boolean) => void;
+    isLoadingSettings: boolean;
 }
 
 // --- Context ---
@@ -37,7 +42,9 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
     const [lockScreenCategories, setLockScreenCategories] = useState<string[]>([]);
     const [eventsEnabled, setEventsEnabled] = useState(true);
 
-
+    // Onboarding State
+    const [hasOnboarded, setHasOnboarded] = useState<boolean>(false);
+    const [isLoadingSettings, setIsLoadingSettings] = useState(true);
 
     // --- Effects for Storage ---
     useEffect(() => {
@@ -47,13 +54,17 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
                 const savedNotifications = await AsyncStorage.getItem('notifications-enabled');
                 const savedCategories = await AsyncStorage.getItem('lock-screen-categories');
                 const savedEvents = await AsyncStorage.getItem('events-enabled');
+                const savedOnboarded = await AsyncStorage.getItem('has-onboarded');
 
                 if (savedTheme) setThemeMode(savedTheme as ThemeMode);
                 if (savedNotifications) setNotificationsEnabled(savedNotifications === 'true');
                 if (savedCategories) setLockScreenCategories(JSON.parse(savedCategories));
                 if (savedEvents) setEventsEnabled(savedEvents === 'true');
+                if (savedOnboarded) setHasOnboarded(savedOnboarded === 'true');
             } catch (error) {
                 console.error('Error loading settings:', error);
+            } finally {
+                setIsLoadingSettings(false);
             }
         };
         loadSettings();
@@ -74,6 +85,12 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
     useEffect(() => {
         AsyncStorage.setItem('events-enabled', String(eventsEnabled));
     }, [eventsEnabled]);
+
+    useEffect(() => {
+        if (!isLoadingSettings) {
+            AsyncStorage.setItem('has-onboarded', String(hasOnboarded));
+        }
+    }, [hasOnboarded, isLoadingSettings]);
 
     // --- Helper Functions & Computed Values ---
     const toggleLockScreenCategory = useCallback((id: string) => {
@@ -99,10 +116,13 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
         notificationsEnabled, setNotificationsEnabled,
         lockScreenCategories, toggleLockScreenCategory,
         eventsEnabled, setEventsEnabled,
-        isDark, colors
+        isDark, colors,
+        hasOnboarded, setHasOnboarded,
+        isLoadingSettings
     }), [
         themeMode, notificationsEnabled, lockScreenCategories,
-        eventsEnabled, isDark, colors, toggleLockScreenCategory
+        eventsEnabled, isDark, colors, toggleLockScreenCategory,
+        hasOnboarded, isLoadingSettings
     ]);
 
     return (

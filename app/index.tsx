@@ -7,15 +7,17 @@ import { useTheme } from '@/hooks/useTheme';
 import { fetchHomeCategories, getCachedCategories } from '@/services/categoryService';
 import { Category } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { Redirect, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View, ActivityIndicator } from 'react-native';
+import { useSettings } from '@/context/SettingsContext';
 
 export default function HomeScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const { t, i18n } = useTranslation();
+  const { hasOnboarded, isLoadingSettings } = useSettings();
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -61,6 +63,18 @@ export default function HomeScreen() {
       }
     });
   };
+
+  if (isLoadingSettings) {
+    return (
+      <View style={[commonStyles.screenContainer, commonStyles.centerAlign, { backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
+
+  if (!hasOnboarded) {
+    return <Redirect href="/onboarding" />;
+  }
 
   return (
     <ScrollView

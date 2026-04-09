@@ -30,6 +30,7 @@ function LayoutContent() {
           }}
         >
           <Stack.Screen name="index" />
+          <Stack.Screen name="onboarding" />
           <Stack.Screen name="preview" />
           <Stack.Screen name="settings" />
         </Stack>
