@@ -4,17 +4,18 @@ import { useTheme } from '@/hooks/useTheme';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState, useMemo, useCallback } from 'react';
-import { ScrollView, StyleSheet, TouchableOpacity, View, Modal, FlatList } from 'react-native';
+import { ScrollView, StyleSheet, TouchableOpacity, View, Modal, FlatList, Linking, Alert } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CATEGORIES } from '@/services/mockData';
 import { ActivityIndicator } from 'react-native';
+import * as Device from 'expo-device';
+import Constants from 'expo-constants';
 
 export default function SettingsScreen() {
     const router = useRouter();
     const { t, i18n: i18nInstance } = useTranslation();
     
-    console.log('Current i18n language:', i18nInstance?.language);
     const { 
         colors,
         themeMode, 
@@ -67,6 +68,52 @@ export default function SettingsScreen() {
             setFeatureModalVisible(false);
         }, 2000);
     };
+
+    const handleReportBug = useCallback(async () => {
+        const deviceName = Device.modelName || 'Unknown';
+        const osVersion = `${Device.osName} ${Device.osVersion}`;
+        const appVersion = Constants.expoConfig?.version || '1.0.0';
+
+        const subject = encodeURIComponent(`[Bug Report] Vibe Walls v${appVersion}`);
+        const body = encodeURIComponent(
+            `\n\n--- Device Info ---\nDevice: ${deviceName}\nOS: ${osVersion}\nApp Version: ${appVersion}\nTheme: ${themeMode}\nLanguage: ${currentLanguage}\n`
+        );
+
+        const mailto = `mailto:support@vibewalls.app?subject=${subject}&body=${body}`;
+
+        try {
+            const canOpen = await Linking.canOpenURL(mailto);
+            if (canOpen) {
+                await Linking.openURL(mailto);
+            } else {
+                Alert.alert(
+                    t('settings.reportBug'),
+                    t('settings.noEmailClient')
+                );
+            }
+        } catch (err) {
+            console.error('Failed to open email client:', err);
+        }
+    }, [themeMode, currentLanguage, t]);
+
+    const handleSuggestFeature = useCallback(async () => {
+        const subject = encodeURIComponent('[Feature Request] Vibe Walls');
+        const mailto = `mailto:support@vibewalls.app?subject=${subject}`;
+
+        try {
+            await Linking.openURL(mailto);
+        } catch (err) {
+            console.error('Failed to open email client:', err);
+        }
+    }, []);
+
+    const handleFAQ = useCallback(async () => {
+        try {
+            await Linking.openURL('https://vibewalls.app/faq');
+        } catch (err) {
+            console.error('Failed to open FAQ:', err);
+        }
+    }, []);
 
     const SettingItem = ({
         icon,
@@ -145,6 +192,24 @@ export default function SettingsScreen() {
                     />
                 </View>
 
+                <View style={styles.section}>
+                    <CustomText variant="caption" style={styles.sectionTitle}>{t('settings.reportFeedback')}</CustomText>
+                    <SettingItem 
+                        icon="bug-outline" 
+                        label={t('settings.reportBug')} 
+                        onPress={handleReportBug}
+                    />
+                    <SettingItem 
+                        icon="bulb-outline" 
+                        label={t('settings.suggestFeature')} 
+                        onPress={handleSuggestFeature}
+                    />
+                    <SettingItem 
+                        icon="help-circle-outline" 
+                        label={t('settings.faq')} 
+                        onPress={handleFAQ}
+                    />
+                </View>
 
                 <View style={styles.section}>
                     <CustomText variant="caption" style={styles.sectionTitle}>{t('settings.about')}</CustomText>

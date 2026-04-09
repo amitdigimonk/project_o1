@@ -6,10 +6,12 @@ import { useVideoPlayer, VideoView } from 'expo-video';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import Animated, { FadeInUp } from 'react-native-reanimated';
 import CustomText from './CustomText';
 
 interface CategoryCardProps {
   category: Category;
+  index?: number;
   onPress: (category: Category) => void;
 }
 
@@ -30,45 +32,57 @@ const CategoryVideo = ({ source }: { source: string }) => {
   );
 };
 
-const CategoryCard: React.FC<CategoryCardProps> = React.memo(({ category, onPress }) => {
+const CategoryCard: React.FC<CategoryCardProps> = React.memo(({ category, index = 0, onPress }) => {
   const { colors } = useTheme();
   const { t } = useTranslation();
   const isVideo = category.type === 'video';
 
+  const handlePress = () => {
+    onPress(category);
+  };
+
   return (
-    <TouchableOpacity
-      activeOpacity={0.9}
-      style={[styles.categoryCard, commonStyles.cardShadow]}
-      onPress={() => onPress(category)}
+    <Animated.View
+      entering={FadeInUp.delay(index * 80).springify().damping(18).stiffness(140)}
+      style={styles.cardWrapper}
     >
-      {isVideo ? (
-        <CategoryVideo source={category.image} />
-      ) : (
-        <Image
-          source={category.image || 'https://via.placeholder.com/300'}
-          style={styles.cardImage}
-          contentFit="cover"
-          transition={300}
-        />
-      )}
-      <View style={styles.overlay} />
-      <View style={styles.cardContent}>
-        <CustomText variant="body" color="#FFFFFF">{category.count}</CustomText>
-        <CustomText variant="subheading" color="#FFFFFF">
-          {typeof category.name === 'string' ? category.name : t(`categories.${category.title}`)}
-        </CustomText>
-      </View>
-    </TouchableOpacity>
+      <TouchableOpacity
+        activeOpacity={0.9}
+        style={[styles.categoryCard, commonStyles.cardShadow]}
+        onPress={handlePress}
+      >
+        {isVideo ? (
+          <CategoryVideo source={category.image} />
+        ) : (
+          <Image
+            source={category.image || 'https://via.placeholder.com/300'}
+            style={styles.cardImage}
+            contentFit="cover"
+            transition={300}
+          />
+        )}
+        <View style={styles.overlay} />
+        <View style={styles.cardContent}>
+          <CustomText variant="body" color="#FFFFFF">{category.count}</CustomText>
+          <CustomText variant="subheading" color="#FFFFFF">
+            {typeof category.name === 'string' ? category.name : t(`categories.${category.title}`)}
+          </CustomText>
+        </View>
+      </TouchableOpacity>
+    </Animated.View>
   );
 });
 
 const styles = StyleSheet.create({
-  categoryCard: {
+  cardWrapper: {
     width: '48%',
+    marginBottom: 16,
+  },
+  categoryCard: {
+    width: '100%',
     height: 220,
     borderRadius: 24,
     overflow: 'hidden',
-    marginBottom: 16,
     position: 'relative',
     ...commonStyles.cardShadow,
   },

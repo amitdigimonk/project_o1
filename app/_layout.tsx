@@ -6,6 +6,7 @@ import { useEffect } from 'react';
 import { View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SettingsProvider } from '@/context/SettingsContext';
+import { ToastProvider } from '@/components/Toast';
 import { useTheme } from '@/hooks/useTheme';
 import { useUserSync } from '@/hooks/useUserSync';
 import { StatusBar } from 'expo-status-bar';
@@ -55,7 +56,9 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SettingsProvider>
-        <LayoutContent />
+        <ToastProvider>
+          <LayoutContent />
+        </ToastProvider>
       </SettingsProvider>
     </GestureHandlerRootView>
   );

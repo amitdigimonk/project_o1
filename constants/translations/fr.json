@@ -22,7 +22,12 @@
     "downloadAndCache": "Télécharger et mettre en cache",
     "maxSelection": "Max 5 catégories",
     "events": "Événements",
-    "cached": "Mis en cache"
+    "cached": "Mis en cache",
+    "reportFeedback": "Signalement et commentaires",
+    "reportBug": "Signaler un bug",
+    "suggestFeature": "Suggérer une fonctionnalité",
+    "faq": "FAQ et aide",
+    "noEmailClient": "Aucune application de messagerie trouvée. Veuillez envoyer votre rapport à support@vibewalls.app"
   },
   "home": {
     "caption": "VIBE WALLS",
@@ -46,14 +51,17 @@
     "success": "Succès",
     "appliedTo": "Fond d'écran appliqué sur l'écran {{location}} !",
     "error": "Erreur",
-    "failed": "Échec de l'application du fond d'écran. Veuillez réessayer."
+    "failed": "Échec de l'application du fond d'écran. Veuillez réessayer.",
+    "interactiveMissing": "Les données du fond d'écran interactif sont manquantes.",
+    "interactiveApplied": "Le fond d'écran animé est prêt ! Choisissez-le dans le sélecteur.",
+    "tryAgain": "Réessayer",
+    "quickApply": "Appui long pour appliquer rapidement"
   },
   "bottomSheet": {
-    "title": "Appliquer le fond d'écran",
-    "subtitle": "Choisissez où vous souhaitez appliquer ce fond d'écran",
-    "home": "Écran d'accueil",
-    "lock": "Écran de verrouillage",
-    "both": "Les deux écrans",
+    "title": "Appliquer",
+    "home": "Accueil",
+    "lock": "Verrou",
+    "both": "Les deux",
     "cancel": "Annuler"
   },
   "categories": {

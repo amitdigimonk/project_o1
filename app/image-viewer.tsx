@@ -1,4 +1,5 @@
 import CustomText from '@/components/CustomText';
+import { useToast } from '@/components/Toast';
 import WallpaperBottomSheet from '@/components/WallpaperBottomSheet';
 import { useTheme } from '@/hooks/useTheme';
 import { androidWallpaperEngine, WallpaperLocation } from '@/services/androidWallpaperEngine';
@@ -11,7 +12,7 @@ import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Alert, Dimensions, FlatList, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Dimensions, FlatList, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, { Easing, Extrapolate, interpolate, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
@@ -157,6 +158,8 @@ export default function ImageViewerScreen() {
     const [isApplying, setIsApplying] = useState(false);
     const [isSheetVisible, setIsSheetVisible] = useState(false);
     const [pendingUrl, setPendingUrl] = useState<string | null>(null);
+    const [currentPage, setCurrentPage] = useState(initialIndex ? parseInt(initialIndex as string) : 0);
+    const { showToast } = useToast();
 
     useEffect(() => {
         const loadList = async () => {
@@ -176,24 +179,22 @@ export default function ImageViewerScreen() {
 
         if (success) {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            Alert.alert(t('imageViewer.success'), t('imageViewer.appliedTo', { location: location.toLowerCase() }));
+            showToast(t('imageViewer.appliedTo', { location: location.toLowerCase() }), 'success');
         } else {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-            Alert.alert(t('imageViewer.error'), t('imageViewer.failed'));
+            showToast(t('imageViewer.failed'), 'error');
         }
     };
 
     const handleApplyPress = useCallback(async (item: Wallpaper) => {
         if (item.type === 'interactive') {
-            // Check if we have the raw code string available
             if (!item.indexCode) {
-                Alert.alert("Error", "Interactive code data is missing.");
+                showToast(t('imageViewer.interactiveMissing'), 'error');
                 return;
             }
 
             setIsApplying(true);
             try {
-                // Save the string to index.html and trigger the intent
                 const result = await prepareAndApplyHtmlWallpaper(item.indexCode);
 
                 if (!result.success) {
@@ -201,9 +202,10 @@ export default function ImageViewerScreen() {
                 }
 
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                showToast(t('imageViewer.interactiveApplied'), 'success');
             } catch (error: any) {
                 console.error("[ImageViewer] Interactive Apply Error:", error);
-                Alert.alert("Error", error.message || "Could not apply interactive wallpaper.");
+                showToast(error.message || t('imageViewer.failed'), 'error');
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
             } finally {
                 setIsApplying(false);
@@ -218,7 +220,7 @@ export default function ImageViewerScreen() {
         } else {
             applyToLocation('BOTH');
         }
-    }, [t]);
+    }, [t, showToast]);
 
     const renderItem = useCallback(({ item }: { item: Wallpaper }) => (
         <GalleryItem
@@ -232,6 +234,7 @@ export default function ImageViewerScreen() {
     const onViewableItemsChanged = useRef(({ viewableItems }: any) => {
         if (viewableItems.length > 0) {
             const currentIndex = viewableItems[0].index;
+            setCurrentPage(currentIndex);
             [1, 2].forEach(offset => {
                 const nextItem = wallpapers[currentIndex + offset];
                 if (nextItem) Image.prefetch(nextItem.url);
@@ -280,6 +283,14 @@ export default function ImageViewerScreen() {
                 >
                     <Ionicons name="chevron-back" size={28} color="#FFFFFF" />
                 </Pressable>
+
+                {wallpapers.length > 1 && (
+                    <View style={styles.pageIndicator}>
+                        <CustomText variant="body" style={styles.pageText}>
+                            {currentPage + 1} / {wallpapers.length}
+                        </CustomText>
+                    </View>
+                )}
 
                 <WallpaperBottomSheet
                     isVisible={isSheetVisible}
@@ -397,5 +408,20 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         zIndex: 200,
+    },
+    pageIndicator: {
+        position: 'absolute',
+        top: 54,
+        right: 20,
+        backgroundColor: 'rgba(0,0,0,0.45)',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 20,
+        zIndex: 100,
+    },
+    pageText: {
+        color: '#FFFFFF',
+        fontSize: 13,
+        fontWeight: '600',
     }
 });

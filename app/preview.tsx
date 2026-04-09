@@ -1,15 +1,18 @@
 import CustomText from '@/components/CustomText';
+import { WallpaperGridSkeleton } from '@/components/SkeletonPlaceholder';
+import WallpaperBottomSheet from '@/components/WallpaperBottomSheet';
 import { commonStyles } from '@/constants/commonStyles';
 import { useTheme } from '@/hooks/useTheme';
-import { ImageData } from '@/types';
+import { androidWallpaperEngine } from '@/services/androidWallpaperEngine';
+import { useToast } from '@/components/Toast';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 
-import { Image } from 'expo-image';
 import WallpaperCard from '@/components/WallpaperCard';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import React, { useState, useCallback, useEffect } from 'react';
-import { ActivityIndicator, FlatList, ScrollView, StyleSheet, TouchableOpacity, View, Platform } from 'react-native';
+import { FlatList, RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View, Platform } from 'react-native';
 import { fetchHomeCategories, getCachedCategories } from '@/services/categoryService';
 import { fetchWallpapersByCategory, getCachedWallpapers } from '@/services/wallpaperService';
 import { Category, Wallpaper } from '@/types';
@@ -77,6 +80,10 @@ export default function PreviewScreen() {
     const [categories, setCategories] = useState<Category[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [isRefreshing, setIsRefreshing] = useState(false);
+    const [isSheetVisible, setIsSheetVisible] = useState(false);
+    const [pendingUrl, setPendingUrl] = useState<string | null>(null);
+    const { showToast } = useToast();
     const { colors } = useTheme();
     const { i18n } = useTranslation();
     const [selectedCategoryId, setSelectedCategoryId] = useState<string | undefined>(categoryId as string);
@@ -103,43 +110,47 @@ export default function PreviewScreen() {
         }
     }, [isBrowseAll, i18n.language]);
 
-    useEffect(() => {
-        const loadWallpapers = async () => {
-            try {
-                setIsLoading(true);
-                setError(null);
+    const loadWallpapers = useCallback(async (showSkeleton = true) => {
+        try {
+            if (showSkeleton) setIsLoading(true);
+            setError(null);
 
-                // 1. Try to load from cache first for instant feedback
-                const cached = await getCachedWallpapers(selectedCategoryId);
-                if (cached && cached.length > 0) {
-                    setWallpapers(cached);
-                    setIsLoading(false); // Hide loader early if we have cache
-                }
-
-                // 2. Fetch fresh data from network
-                const data = await fetchWallpapersByCategory(
-                    selectedCategoryId, 
-                    1, 
-                    20,
-                    (freshData: Wallpaper[]) => {
-                        // Background update
-                        setWallpapers(freshData);
-                    }
-                );
-                setWallpapers(data);
-            } catch (err) {
-                console.error('[Preview] Load wallpapers error:', err);
-                // Only show error if we don't have cached data to show
-                if (wallpapers.length === 0) {
-                    setError(err instanceof Error ? err.message : 'Failed to load wallpapers');
-                }
-            } finally {
-                setIsLoading(false);
+            // 1. Try to load from cache first for instant feedback
+            const cached = await getCachedWallpapers(selectedCategoryId);
+            if (cached && cached.length > 0) {
+                setWallpapers(cached);
+                if (showSkeleton) setIsLoading(false);
             }
-        };
 
-        loadWallpapers();
+            // 2. Fetch fresh data from network
+            const data = await fetchWallpapersByCategory(
+                selectedCategoryId, 
+                1, 
+                20,
+                (freshData: Wallpaper[]) => {
+                    setWallpapers(freshData);
+                }
+            );
+            setWallpapers(data);
+        } catch (err) {
+            console.error('[Preview] Load wallpapers error:', err);
+            if (wallpapers.length === 0) {
+                setError(err instanceof Error ? err.message : 'Failed to load wallpapers');
+            }
+        } finally {
+            setIsLoading(false);
+            setIsRefreshing(false);
+        }
     }, [selectedCategoryId]);
+
+    useEffect(() => {
+        loadWallpapers();
+    }, [loadWallpapers]);
+
+    const onRefresh = useCallback(() => {
+        setIsRefreshing(true);
+        loadWallpapers(false);
+    }, [loadWallpapers]);
 
     const handleImagePress = useCallback((index: number) => {
         router.push({ 
@@ -151,14 +162,34 @@ export default function PreviewScreen() {
         });
     }, [router, selectedCategoryId]);
 
+    const handleLongPress = useCallback((item: Wallpaper) => {
+        if (item.type !== 'interactive') {
+            setPendingUrl(item.url);
+            setIsSheetVisible(true);
+        }
+    }, []);
+
+    const applyToLocation = useCallback(async (location: 'HOME' | 'LOCK' | 'BOTH') => {
+        if (!pendingUrl) return;
+        const success = await androidWallpaperEngine.setWallpaper(pendingUrl, location);
+        if (success) {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            showToast(t('imageViewer.appliedTo', { location: location.toLowerCase() }), 'success');
+        } else {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+            showToast(t('imageViewer.failed'), 'error');
+        }
+    }, [pendingUrl, showToast, t]);
+
     const renderItem = useCallback(({ item, index }: { item: Wallpaper; index: number }) => (
         <WallpaperCard
             item={item}
             index={index}
             colors={colors}
             onPress={() => handleImagePress(index)}
+            onLongPress={() => handleLongPress(item)}
         />
-    ), [colors, handleImagePress]);
+    ), [colors, handleImagePress, handleLongPress]);
 
     return (
         <View style={[commonStyles.screenContainer, { backgroundColor: colors.background }]}>
@@ -223,9 +254,7 @@ export default function PreviewScreen() {
             )}
 
             {isLoading ? (
-                <View style={[commonStyles.screenContainer, commonStyles.centerAlign]}>
-                    <ActivityIndicator size="large" color={colors.primary} />
-                </View>
+                <WallpaperGridSkeleton />
             ) : error ? (
                 <View style={styles.errorContainer}>
                     <Ionicons name="alert-circle-outline" size={48} color="#EF4444" />
@@ -238,7 +267,7 @@ export default function PreviewScreen() {
                             fetchWallpapersByCategory(selectedCategoryId).then(setWallpapers).catch((e: Error) => setError(e.message)).finally(() => setIsLoading(false));
                         }}
                     >
-                        <CustomText color="#FFF">Try Again</CustomText>
+                        <CustomText color="#FFF">{t('imageViewer.tryAgain')}</CustomText>
                     </TouchableOpacity>
                 </View>
             ) : (
@@ -254,6 +283,14 @@ export default function PreviewScreen() {
                         initialNumToRender={6}
                         maxToRenderPerBatch={10}
                         windowSize={10}
+                        refreshControl={
+                            <RefreshControl
+                                refreshing={isRefreshing}
+                                onRefresh={onRefresh}
+                                tintColor={colors.primary}
+                                colors={[colors.primary]}
+                            />
+                        }
                         ListEmptyComponent={() => (
                             <View style={[commonStyles.centerAlign, { marginTop: 100 }]}>
                                 <CustomText color={colors.textMuted}>No wallpapers found</CustomText>
@@ -262,6 +299,15 @@ export default function PreviewScreen() {
                     />
                 </View>
             )}
+
+            <WallpaperBottomSheet
+                isVisible={isSheetVisible}
+                onClose={() => setIsSheetVisible(false)}
+                onSelect={(location) => {
+                    setIsSheetVisible(false);
+                    applyToLocation(location);
+                }}
+            />
         </View>
     );
 }

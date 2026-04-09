@@ -1,15 +1,16 @@
 import CategoryCard from '@/components/CategoryCard';
 import CustomButton from '@/components/CustomButton';
 import CustomText from '@/components/CustomText';
+import { CategoryGridSkeleton } from '@/components/SkeletonPlaceholder';
 import { commonStyles } from '@/constants/commonStyles';
 import { useTheme } from '@/hooks/useTheme';
 import { fetchHomeCategories, getCachedCategories } from '@/services/categoryService';
 import { Category } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -17,34 +18,38 @@ export default function HomeScreen() {
   const { t, i18n } = useTranslation();
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
+  const loadCategories = useCallback(async (showSkeleton = true) => {
+    try {
+      if (showSkeleton) setIsLoading(true);
 
-  console.log(categories);
+      // 1. Load from cache first
+      const cached = await getCachedCategories();
+      if (cached && cached.length > 0) {
+        setCategories(cached);
+        if (showSkeleton) setIsLoading(false);
+      }
+
+      // 2. Fetch fresh data
+      const data = await fetchHomeCategories(i18n.language || 'en');
+      setCategories(data);
+    } catch (error) {
+      console.error('Failed to load categories:', error);
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }
+  }, [i18n.language]);
 
   useEffect(() => {
-    const loadCategories = async () => {
-      try {
-        setIsLoading(true);
-
-        // 1. Load from cache first
-        const cached = await getCachedCategories();
-        if (cached && cached.length > 0) {
-          setCategories(cached);
-          setIsLoading(false); // Hide loader if we have cache
-        }
-
-        // 2. Fetch fresh data
-        const data = await fetchHomeCategories(i18n.language || 'en');
-        setCategories(data);
-      } catch (error) {
-        console.error('Failed to load categories:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     loadCategories();
-  }, [i18n.language]);
+  }, [loadCategories]);
+
+  const onRefresh = useCallback(() => {
+    setIsRefreshing(true);
+    loadCategories(false);
+  }, [loadCategories]);
 
   const handleCategoryPress = (category: Category) => {
 
@@ -62,6 +67,14 @@ export default function HomeScreen() {
       style={[commonStyles.screenContainer, { backgroundColor: colors.background }]}
       contentContainerStyle={styles.scrollContent}
       showsVerticalScrollIndicator={false}
+      refreshControl={
+        <RefreshControl
+          refreshing={isRefreshing}
+          onRefresh={onRefresh}
+          tintColor={colors.primary}
+          colors={[colors.primary]}
+        />
+      }
     >
       <View style={styles.header}>
         <View style={styles.headerTitleContainer}>
@@ -79,14 +92,13 @@ export default function HomeScreen() {
 
       <View style={styles.grid}>
         {isLoading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={colors.primary} />
-          </View>
+          <CategoryGridSkeleton />
         ) : (
-          categories.map((item) => (
+          categories.map((item, index) => (
             <CategoryCard
               key={item.id}
               category={item}
+              index={index}
               onPress={handleCategoryPress}
             />
           ))

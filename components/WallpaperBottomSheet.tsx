@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Dimensions, Modal, StyleSheet, TouchableOpacity, View, Pressable, ScrollView } from 'react-native';
+import { Modal, StyleSheet, TouchableOpacity, View, Pressable } from 'react-native';
 import Animated, {
     useAnimatedStyle,
     useSharedValue,
@@ -11,6 +11,7 @@ import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import CustomText from './CustomText';
 import { useTheme } from '@/hooks/useTheme';
 import { WallpaperLocation } from '@/services/androidWallpaperEngine';
@@ -21,7 +22,7 @@ interface WallpaperBottomSheetProps {
     onSelect: (location: WallpaperLocation) => void;
 }
 
-const SHEET_HEIGHT = 480;
+const SHEET_HEIGHT = 240;
 
 export default function WallpaperBottomSheet({ isVisible, onClose, onSelect }: WallpaperBottomSheetProps) {
     const { colors } = useTheme();
@@ -82,15 +83,16 @@ export default function WallpaperBottomSheet({ isVisible, onClose, onSelect }: W
         <TouchableOpacity
             style={[styles.option, { backgroundColor: colors.card }]}
             onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 onSelect(location);
                 hide();
             }}
+            activeOpacity={0.7}
         >
-            <View style={[styles.iconContainer, { backgroundColor: colors.primary + '15' }]}>
-                <Ionicons name={icon} size={24} color={colors.primary} />
+            <View style={[styles.iconCircle, { backgroundColor: colors.primary + '15' }]}>
+                <Ionicons name={icon} size={22} color={colors.primary} />
             </View>
             <CustomText variant="body" style={styles.optionLabel}>{label}</CustomText>
-            <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
         </TouchableOpacity>
     );
 
@@ -102,7 +104,7 @@ export default function WallpaperBottomSheet({ isVisible, onClose, onSelect }: W
             onRequestClose={hide}
         >
             <Pressable style={styles.backdrop} onPress={hide}>
-                <Animated.View style={[styles.backdropBackground, { backgroundColor: 'rgba(0,0,0,0.5)' }]} />
+                <Animated.View style={[styles.backdropBackground, { backgroundColor: 'rgba(0,0,0,0.4)' }]} />
             </Pressable>
 
             <View style={styles.container}>
@@ -113,7 +115,7 @@ export default function WallpaperBottomSheet({ isVisible, onClose, onSelect }: W
                             { 
                                 backgroundColor: colors.background, 
                                 height: TOTAL_HEIGHT,
-                                paddingBottom: Math.max(insets.bottom, 20) 
+                                paddingBottom: Math.max(insets.bottom, 16) 
                             },
                             animatedStyle
                         ]}
@@ -122,26 +124,17 @@ export default function WallpaperBottomSheet({ isVisible, onClose, onSelect }: W
                             <View style={[styles.dragHandle, { backgroundColor: colors.border }]} />
                         </View>
 
-                        <ScrollView 
-                            bounces={false} 
-                            showsVerticalScrollIndicator={false}
-                            contentContainerStyle={styles.content}
-                        >
-                            <CustomText variant="heading" style={styles.title}>{t('bottomSheet.title')}</CustomText>
-                            <CustomText variant="body" style={[styles.subtitle, { color: colors.textMuted }]}>
-                                {t('bottomSheet.subtitle')}
-                            </CustomText>
+                        <CustomText variant="heading" style={styles.title}>
+                            {t('bottomSheet.title')}
+                        </CustomText>
 
-                            <View style={styles.optionsContainer}>
-                                <Option icon="home-outline" label={t('bottomSheet.home')} location="HOME" />
-                                <Option icon="lock-closed-outline" label={t('bottomSheet.lock')} location="LOCK" />
-                                <Option icon="phone-portrait-outline" label={t('bottomSheet.both')} location="BOTH" />
-                            </View>
+                        <View style={styles.optionsRow}>
+                            <Option icon="home-outline" label={t('bottomSheet.home')} location="HOME" />
+                            <Option icon="lock-closed-outline" label={t('bottomSheet.lock')} location="LOCK" />
+                            <Option icon="phone-portrait-outline" label={t('bottomSheet.both')} location="BOTH" />
+                        </View>
 
-                            <TouchableOpacity style={styles.cancelButton} onPress={hide}>
-                                <CustomText variant="body" color="#EF4444" style={{ fontWeight: '600' }}>{t('bottomSheet.cancel')}</CustomText>
-                            </TouchableOpacity>
-                        </ScrollView>
+
                     </Animated.View>
                 </GestureDetector>
             </View>
@@ -165,20 +158,17 @@ const styles = StyleSheet.create({
         bottom: 0,
         left: 0,
         right: 0,
-        borderTopLeftRadius: 40,
-        borderTopRightRadius: 40,
+        borderTopLeftRadius: 28,
+        borderTopRightRadius: 28,
         shadowColor: "#000",
-        shadowOffset: {
-            width: 0,
-            height: -10,
-        },
-        shadowOpacity: 0.2,
-        shadowRadius: 15,
-        elevation: 20,
+        shadowOffset: { width: 0, height: -6 },
+        shadowOpacity: 0.15,
+        shadowRadius: 12,
+        elevation: 16,
     },
     dragHandleContainer: {
         alignItems: 'center',
-        paddingVertical: 16,
+        paddingVertical: 10,
     },
     dragHandle: {
         width: 36,
@@ -186,44 +176,35 @@ const styles = StyleSheet.create({
         borderRadius: 2,
         opacity: 0.3,
     },
-    content: {
-        paddingHorizontal: 28,
-    },
     title: {
-        fontSize: 26,
-        fontWeight: '800',
-        marginBottom: 6,
+        fontSize: 18,
+        fontWeight: '700',
+        textAlign: 'center',
+        marginBottom: 16,
     },
-    subtitle: {
-        fontSize: 15,
-        marginBottom: 28,
-    },
-    optionsContainer: {
-        gap: 14,
+    optionsRow: {
+        flexDirection: 'row',
+        paddingHorizontal: 20,
+        gap: 10,
     },
     option: {
-        flexDirection: 'row',
+        flex: 1,
         alignItems: 'center',
-        padding: 18,
-        borderRadius: 20,
-    },
-    iconContainer: {
-        width: 52,
-        height: 52,
+        paddingVertical: 16,
         borderRadius: 16,
+        gap: 8,
+    },
+    iconCircle: {
+        width: 44,
+        height: 44,
+        borderRadius: 22,
         justifyContent: 'center',
         alignItems: 'center',
-        marginRight: 16,
     },
     optionLabel: {
-        flex: 1,
-        fontSize: 17,
-        fontWeight: '700',
+        fontSize: 13,
+        fontWeight: '600',
+        textAlign: 'center',
     },
-    cancelButton: {
-        marginTop: 24,
-        alignItems: 'center',
-        padding: 12,
-    },
-});
 
+});

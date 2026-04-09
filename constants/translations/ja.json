@@ -22,7 +22,12 @@
     "downloadAndCache": "ダウンロードとキャッシュ",
     "maxSelection": "最大5カテゴリ",
     "events": "イベント",
-    "cached": "キャッシュ済み"
+    "cached": "キャッシュ済み",
+    "reportFeedback": "報告とフィードバック",
+    "reportBug": "バグを報告",
+    "suggestFeature": "機能を提案",
+    "faq": "FAQとヘルプ",
+    "noEmailClient": "メールアプリが見つかりません。support@vibewalls.app にレポートを送信してください"
   },
   "home": {
     "caption": "バイブウォール",
@@ -46,14 +51,17 @@
     "success": "成功",
     "appliedTo": "壁紙を {{location}} 画面に適用しました！",
     "error": "エラー",
-    "failed": "壁紙の適用に失敗しました。もう一度お試しください。"
+    "failed": "壁紙の適用に失敗しました。もう一度お試しください。",
+    "interactiveMissing": "インタラクティブ壁紙のデータがありません。",
+    "interactiveApplied": "ライブ壁紙の準備ができました！ピッカーから選択してください。",
+    "tryAgain": "再試行",
+    "quickApply": "長押しでクイック適用"
   },
   "bottomSheet": {
-    "title": "壁紙を適用",
-    "subtitle": "壁紙を適用する場所を選択してください",
-    "home": "ホーム画面",
-    "lock": "ロック画面",
-    "both": "両方の画面",
+    "title": "壁紙を設定",
+    "home": "ホーム",
+    "lock": "ロック",
+    "both": "両方",
     "cancel": "キャンセル"
   },
   "categories": {

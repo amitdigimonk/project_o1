@@ -22,7 +22,12 @@
     "downloadAndCache": "Download & Cache",
     "maxSelection": "Max 5 categories",
     "events": "Events",
-    "cached": "Cached"
+    "cached": "Cached",
+    "reportFeedback": "Report & Feedback",
+    "reportBug": "Report a Bug",
+    "suggestFeature": "Suggest a Feature",
+    "faq": "FAQ & Help",
+    "noEmailClient": "No email app found. Please send your report to support@vibewalls.app"
   },
   "home": {
     "caption": "VIBE WALLS",
@@ -50,14 +55,17 @@
     "metaAuthor": "Designed By",
     "metaCategory": "Category",
     "metaDimensions": "Dimensions",
-    "metaType": "Type"
+    "metaType": "Type",
+    "interactiveMissing": "Interactive wallpaper data is missing.",
+    "interactiveApplied": "Live wallpaper is ready! Choose it from the picker.",
+    "tryAgain": "Try Again",
+    "quickApply": "Long press to quick-apply"
   },
   "bottomSheet": {
-    "title": "Apply Wallpaper",
-    "subtitle": "Choose where you want to apply this wallpaper",
-    "home": "Home Screen",
-    "lock": "Lock Screen",
-    "both": "Both Screens",
+    "title": "Set Wallpaper",
+    "home": "Home",
+    "lock": "Lock",
+    "both": "Both",
     "cancel": "Cancel"
   },
   "categories": {

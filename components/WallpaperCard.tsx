@@ -11,15 +11,18 @@ interface WallpaperCardProps {
     index: number;
     colors: any;
     onPress: () => void;
+    onLongPress?: () => void;
 }
 
 const WALLPAPER_DIR = `${FileSystem.documentDirectory || ''}wallpaper/`;
 const INDEX_HTML_PATH = `${WALLPAPER_DIR}index.html`;
 const THREE_JS_PATH = `${WALLPAPER_DIR}three.min.js`;
 
-const WallpaperCard = React.memo(({ item, index, colors, onPress }: WallpaperCardProps) => {
+const WallpaperCard = React.memo(({ item, index, colors, onPress, onLongPress }: WallpaperCardProps) => {
 
     const handlePress = async () => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        
         if (item.type === 'interactive' && item.indexCode && Platform.OS === 'android') {
             try {
                 // 1. Ensure HTML directory exists
@@ -93,11 +96,18 @@ const WallpaperCard = React.memo(({ item, index, colors, onPress }: WallpaperCar
         onPress();
     };
 
+    const handleLongPress = () => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        onLongPress?.();
+    };
+
     return (
         <TouchableOpacity
             activeOpacity={0.9}
             style={[styles.imageCard, { backgroundColor: colors.card }]}
             onPress={handlePress}
+            onLongPress={handleLongPress}
+            delayLongPress={400}
         >
             <Image
                 source={{ uri: item.url }}
