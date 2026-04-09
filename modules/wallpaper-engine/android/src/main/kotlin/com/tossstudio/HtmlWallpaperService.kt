@@ -17,17 +17,13 @@ import android.view.MotionEvent
 import android.view.SurfaceHolder
 import android.view.View
 import android.view.ViewGroup
+import android.webkit.RenderProcessGoneDetail
 import android.webkit.WebChromeClient
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import java.io.File
 
-/**
- * Vibe Walls - GPU Accelerated Engine
- * Uses VirtualDisplay to map a Hardware-Accelerated WebView directly
- * to the Wallpaper Surface. Unlocks full WebGL (Three.js) support.
- */
 class HtmlWallpaperService : WallpaperService() {
 
     override fun onCreateEngine(): Engine = HtmlEngine()
@@ -37,17 +33,50 @@ class HtmlWallpaperService : WallpaperService() {
         private val mainHandler = Handler(Looper.getMainLooper())
         private var webView: WebView? = null
         
-        // Virtual Display Architecture
         private var virtualDisplay: VirtualDisplay? = null
         private var presentation: Presentation? = null
 
         private var isEngineVisible = false
+        
+        // BATTERY FIX: Sensor throttling variables
+        private var lastSensorUpdate = 0L
+        private val SENSOR_THROTTLE_MS = 32L // ~30 FPS is plenty for smooth parallax
+
+        // ── LIVE HOT-RELOAD FIX (Listens for RN app changes) ─────────────────
+        private val prefs by lazy { 
+            this@HtmlWallpaperService.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE) 
+        }
+
+        private val prefsListener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { sharedPrefs, key ->
+            if (key == PREF_KEY_PATH) {
+                val newPath = sharedPrefs.getString(key, null)
+                if (newPath != null) {
+                    val cleanPath = when {
+                        newPath.startsWith("file://") -> newPath
+                        newPath.startsWith("/") -> "file://$newPath"
+                        else -> "file://$newPath"
+                    }
+                    val diskPath = cleanPath.replace("file://", "").replace("//", "/")
+                    
+                    // Instantly load the new wallpaper without tearing down the engine
+                    mainHandler.post {
+                        if (File(diskPath).exists()) {
+                            webView?.loadUrl(cleanPath)
+                        } else {
+                            webView?.loadUrl("file:///android_asset/wallpaper-payload/index.html")
+                        }
+                    }
+                }
+            }
+        }
 
         // ── Lifecycle ─────────────────────────────────────────────────────────
 
         override fun onCreate(surfaceHolder: SurfaceHolder) {
             super.onCreate(surfaceHolder)
             setTouchEventsEnabled(true)
+            // Start listening for new wallpapers from React Native
+            prefs.registerOnSharedPreferenceChangeListener(prefsListener)
         }
 
         override fun onSurfaceChanged(
@@ -69,18 +98,19 @@ class HtmlWallpaperService : WallpaperService() {
 
         override fun onDestroy() {
             super.onDestroy()
+            // Stop listening to prevent memory leaks
+            prefs.unregisterOnSharedPreferenceChangeListener(prefsListener)
             mainHandler.post { teardownEngine() }
         }
 
         // ── Virtual Display Setup ─────────────────────────────────────────────
 
         private fun setupVirtualDisplay(holder: SurfaceHolder, width: Int, height: Int) {
-            teardownEngine() // Clear any existing displays before resizing
+            teardownEngine() 
 
             val displayManager = getSystemService(Context.DISPLAY_SERVICE) as DisplayManager
             val density = resources.displayMetrics.densityDpi
 
-            // Create a virtual screen mapped directly to the Wallpaper Surface
             virtualDisplay = displayManager.createVirtualDisplay(
                 "VibeWalls_GPU_Display",
                 width,
@@ -97,7 +127,6 @@ class HtmlWallpaperService : WallpaperService() {
                         
                         setupWebView(this.context)
                         
-                        // THE FIX: Non-null assertion (!!) added here
                         setContentView(webView!!, ViewGroup.LayoutParams(
                             ViewGroup.LayoutParams.MATCH_PARENT,
                             ViewGroup.LayoutParams.MATCH_PARENT
@@ -133,6 +162,12 @@ class HtmlWallpaperService : WallpaperService() {
         private val sensorListener = object : SensorEventListener {
             override fun onSensorChanged(event: SensorEvent) {
                 if (event.sensor.type == Sensor.TYPE_ROTATION_VECTOR) {
+                    
+                    // BATTERY FIX: Throttle the JS Bridge
+                    val now = System.currentTimeMillis()
+                    if (now - lastSensorUpdate < SENSOR_THROTTLE_MS) return
+                    lastSensorUpdate = now
+
                     val rotationMatrix = FloatArray(9)
                     SensorManager.getRotationMatrixFromVector(rotationMatrix, event.values)
                     val orientation = FloatArray(3)
@@ -157,7 +192,7 @@ class HtmlWallpaperService : WallpaperService() {
             mainHandler.post {
                 if (visible) {
                     rotationSensor?.let {
-                        sensorManager.registerListener(sensorListener, it, SensorManager.SENSOR_DELAY_GAME)
+                        sensorManager.registerListener(sensorListener, it, SensorManager.SENSOR_DELAY_UI)
                     }
                     webView?.onResume()
                     webView?.evaluateJavascript("window.dispatchEvent(new CustomEvent('playWallpaper'));", null)
@@ -189,10 +224,7 @@ class HtmlWallpaperService : WallpaperService() {
 
         @SuppressLint("SetJavaScriptEnabled")
         private fun setupWebView(displayContext: Context) {
-            // THE FIX: Use Service context (this@HtmlWallpaperService) instead of DisplayContext
-            // to ensure the WebView has proper permissions for internal app files.
             webView = WebView(this@HtmlWallpaperService).apply {
-                // CRITICAL FOR WEBGL: Force Hardware Acceleration
                 setLayerType(View.LAYER_TYPE_HARDWARE, null)
                 setBackgroundColor(android.graphics.Color.TRANSPARENT)
 
@@ -212,15 +244,30 @@ class HtmlWallpaperService : WallpaperService() {
                     loadWithOverviewMode = true
                 }
 
-                webViewClient = object : WebViewClient() {}
+                // BUG-PROOF FIX: Handle Silent WebGL Crashes
+                webViewClient = object : WebViewClient() {
+                    override fun onRenderProcessGone(
+                        view: WebView?,
+                        detail: RenderProcessGoneDetail?
+                    ): Boolean {
+                        mainHandler.post {
+                            surfaceHolder?.let { holder ->
+                                val w = virtualDisplay?.display?.width ?: 1080
+                                val h = virtualDisplay?.display?.height ?: 1920
+                                setupVirtualDisplay(holder, w, h)
+                            }
+                        }
+                        return true
+                    }
+                }
+                
                 webChromeClient = WebChromeClient()
             }
 
-            val prefs = this@HtmlWallpaperService.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            // Initial load of the wallpaper
             val htmlPath = prefs.getString(PREF_KEY_PATH, null)
 
             if (htmlPath != null) {
-                // Better path cleaning
                 val cleanPath = when {
                     htmlPath.startsWith("file://") -> htmlPath
                     htmlPath.startsWith("/") -> "file://$htmlPath"
