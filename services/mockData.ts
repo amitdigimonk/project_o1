@@ -3520,6 +3520,822 @@ export const ROCKET_SVG_CODE = `<!DOCTYPE html>
 </body>
 </html>`;
 
+
+export const PRISM_SHADER_CODE = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body, html {
+        font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+        overflow: hidden;
+        background: #000;
+        touch-action: none; /* CRITICAL: Prevents native scrolling while dragging */
+        width: 100%;
+        height: 100%;
+    }
+    canvas {
+        display: block;
+        width: 100vw;
+        height: 100vh;
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: 1;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+
+  <script id="vertexShader" type="x-shader/x-vertex">
+    attribute vec2 position;
+    void main() {
+        gl_Position = vec4(position, 0.0, 1.0);
+    }
+  </script>
+
+  <script id="fragmentShader" type="x-shader/x-fragment">
+    precision highp float;
+    
+    uniform float uTime;
+    uniform vec2 uResolution;
+    uniform vec2 uMouse;
+    
+    #define PI 3.14159265359
+    #define TAU 6.28318530718
+    #define MAX_STEPS 48
+    #define MAX_DIST 40.0
+    #define SURF_DIST 0.0015
+    
+    float hash(float n) {
+        return fract(sin(n) * 43758.5453);
+    }
+    
+    mat2 rot(float a) {
+        float s = sin(a);
+        float c = cos(a);
+        return mat2(c, -s, s, c);
+    }
+    
+    float sdOctahedron(vec3 p, float s) {
+        p = abs(p);
+        float m = p.x + p.y + p.z - s;
+        vec3 q;
+        if(3.0 * p.x < m) q = p.xyz;
+        else if(3.0 * p.y < m) q = p.yzx;
+        else if(3.0 * p.z < m) q = p.zxy;
+        else return m * 0.57735;
+        
+        float k = clamp(0.5 * (q.z - q.y + s), 0.0, s);
+        return length(vec3(q.x, q.y - s + k, q.z - k));
+    }
+
+    float sdTriPrism(vec3 p, vec2 h) {
+        vec3 q = abs(p);
+        return max(q.z - h.y, max(q.x * 0.866025 + p.y * 0.5, -p.y) - h.x * 0.5);
+    }
+    
+    float smin(float a, float b, float k) {
+        float h = clamp(0.5 + 0.5 * (b - a) / k, 0.0, 1.0);
+        return mix(b, a, h) - k * h * (1.0 - h);
+    }
+
+    float smax(float a, float b, float k) {
+        return -smin(-a, -b, k);
+    }
+    
+    float map(vec3 p) {
+        vec2 m = (uMouse - 0.5) * 2.5;
+        p.xy += m * 0.4;
+        
+        float t1 = uTime * 0.12;
+        float t2 = uTime * 0.08;
+        p.xz *= rot(t1);
+        p.xy *= rot(t2);
+        
+        vec3 p1 = p;
+        p1.yz *= rot(uTime * 0.15);
+        
+        // Simplified distortion: sum instead of product
+        float core_distort = (sin(p1.x * 3.0 + uTime) + sin(p1.y * 3.0 + uTime) + sin(p1.z * 3.0 + uTime)) * 0.03;
+        float core = sdOctahedron(p1, 1.6) + core_distort;
+        
+        vec3 p2 = p1;
+        p2.xy *= rot(0.785 + uTime * 0.2);
+        float prism = sdTriPrism(p2, vec2(1.4, 2.0));
+        core = smax(core, -prism, 0.2);
+        
+        float d = core;
+        float k_blend = 0.2 + 0.15 * (0.5 + 0.5 * sin(uTime * 1.5));
+        
+        // Reduced satellites from 4 to 3 for better performance
+        for(int i = 0; i < 3; i++) {
+            float fi = float(i);
+            float angle = fi * 2.094 + uTime * 0.3; // 2.094 = TAU/3
+            float radius = 3.0 + 0.3 * sin(uTime * 0.4 + fi);
+            
+            vec3 pos = vec3(cos(angle) * radius, sin(angle * 0.7), sin(angle) * radius);
+            vec3 po = p - pos;
+            po.xy *= rot(uTime * 0.5 + fi);
+            
+            float sat_distort = (sin(po.x * 5.0 + fi) + sin(po.y * 5.0 + fi)) * 0.02;
+            float satellite = sdOctahedron(po, 0.4) + sat_distort;
+            d = smin(d, satellite, k_blend);
+        }
+        return d;
+    }
+    
+    // Optimized 4-tap normal calculation (tetrahedron)
+    vec3 getNormal(vec3 p) {
+        const float e = 0.002;
+        const vec2 k = vec2(1,-1);
+        return normalize( k.xyy*map(p + k.xyy*e) + 
+                          k.yyx*map(p + k.yyx*e) + 
+                          k.yxy*map(p + k.yxy*e) + 
+                          k.xxx*map(p + k.xxx*e) );
+    }
+    
+    float raymarch(vec3 ro, vec3 rd, int steps) {
+        float t = 0.0;
+        for(int i = 0; i < 100; i++) {
+            if (i >= steps) break;
+            float d = map(ro + rd * t);
+            if(abs(d) < SURF_DIST || t > MAX_DIST) break;
+            t += d * 0.8; // Step size slightly increased
+        }
+        return t;
+    }
+    
+    vec3 getBackground(vec3 rd) {
+        vec3 p = rd * 100.0;
+        float h = hash(dot(p, vec3(12.98, 78.23, 54.53)));
+        float stars = (h > 0.99) ? pow(h - 0.99, 8.0) * 100.0 : 0.0;
+        
+        vec3 nebula = vec3(0.0);
+        // Simplified nebula
+        nebula += vec3(0.3, 0.15, 0.5) * pow(max(0.0, sin(rd.x * 2.0 + uTime * 0.1)), 4.0) * 0.15;
+        nebula += vec3(0.15, 0.3, 0.6) * pow(max(0.0, sin(rd.y * 2.5 + uTime * 0.05)), 4.0) * 0.15;
+        return stars + nebula;
+    }
+    
+    void main() {
+        vec2 uv = (gl_FragCoord.xy - 0.5 * uResolution) / min(uResolution.x, uResolution.y);
+        vec2 m = (uMouse - 0.5) * 0.5;
+        vec3 ro = vec3(m.x * 2.0, m.y * 2.0, 5.5);
+        vec3 rd = normalize(vec3(uv, -1.0));
+        
+        rd.xy *= rot(m.x * 0.2);
+        rd.yz *= rot(m.y * 0.2);
+        
+        float t = raymarch(ro, rd, MAX_STEPS);
+        vec3 color = vec3(0.0);
+        
+        if(t < MAX_DIST) {
+            vec3 p = ro + rd * t;
+            vec3 normal = getNormal(p);
+            vec3 viewDir = normalize(ro - p);
+            float fresnel = pow(1.0 - max(dot(viewDir, normal), 0.0), 3.0);
+            
+            // Refraction optimization: much fewer steps
+            vec3 refractDir = refract(rd, normal, 0.66); // 1.0/1.5
+            if(length(refractDir) > 0.0) {
+                float t2 = raymarch(p - normal * 0.02, refractDir, 16); // 16 steps only
+                if(t2 < MAX_DIST) {
+                    vec3 p2 = p - normal * 0.02 + refractDir * t2;
+                    vec3 normal2 = getNormal(p2);
+                    
+                    vec3 r = refract(refractDir, -normal2, 0.77); 
+                    vec3 g = refract(refractDir, -normal2, 0.66);
+                    vec3 b = refract(refractDir, -normal2, 0.58);
+                    
+                    color = vec3(getBackground(r).x, getBackground(g).y, getBackground(b).z);
+                    color = pow(color, vec3(0.75)) * 4.0;
+                } else {
+                    color = getBackground(refractDir) * 2.0;
+                }
+            }
+            
+            vec3 lightDir = normalize(vec3(1.0, 1.0, -1.0));
+            float spec = pow(max(dot(normal, normalize(lightDir + viewDir)), 0.0), 128.0);
+            color += spec * 3.0;
+            
+            vec3 fresnelColor = vec3(0.5) + vec3(0.5) * sin(fresnel * TAU + uTime + vec3(0.0, 2.09, 4.18));
+            color += fresnel * fresnelColor * 1.2;
+            
+            color += pow(1.0 - abs(dot(viewDir, normal)), 4.0) * vec3(0.6, 0.7, 1.0) * 0.6;
+            color += pow(max(dot(-normal, lightDir), 0.0), 2.0) * vec3(1.0, 0.6, 0.8) * 0.4;
+            
+        } else {
+            color = getBackground(rd);
+        }
+        
+        color *= smoothstep(0.3, 1.0, 1.0 - length(uv) * 0.4);
+        color = pow(color * 1.1, vec3(0.85));
+        
+        gl_FragColor = vec4(color, 1.0);
+    }
+  <\/script>
+
+  <script>
+    let isPlaying = true;
+    
+    function initWebGL() {
+        const canvas = document.getElementById('canvas');
+        const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+        if (!gl) {
+            console.error('WebGL not supported');
+            return;
+        }
+        
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            gl.viewport(0, 0, canvas.width, canvas.height);
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+        
+        function createShader(gl, type, source) {
+            const shader = gl.createShader(type);
+            gl.shaderSource(shader, source);
+            gl.compileShader(shader);
+            if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+                console.error('Shader compile error:', gl.getShaderInfoLog(shader));
+                gl.deleteShader(shader);
+                return null;
+            }
+            return shader;
+        }
+        
+        function createProgram(gl, vertexShader, fragmentShader) {
+            const program = gl.createProgram();
+            gl.attachShader(program, vertexShader);
+            gl.attachShader(program, fragmentShader);
+            gl.linkProgram(program);
+            if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+                console.error('Program link error:', gl.getProgramInfoLog(program));
+                gl.deleteProgram(program);
+                return null;
+            }
+            return program;
+        }
+        
+        const vertexShaderSource = document.getElementById('vertexShader').textContent;
+        const fragmentShaderSource = document.getElementById('fragmentShader').textContent;
+        
+        const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
+        const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
+        const program = createProgram(gl, vertexShader, fragmentShader);
+        
+        const uTime = gl.getUniformLocation(program, 'uTime');
+        const uResolution = gl.getUniformLocation(program, 'uResolution');
+        const uMouse = gl.getUniformLocation(program, 'uMouse');
+        
+        const positions = new Float32Array([
+            -1, -1,
+             1, -1,
+            -1,  1,
+             1,  1,
+        ]);
+        const positionBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
+        
+        const mouse = { x: 0.5, y: 0.5, targetX: 0.5, targetY: 0.5 };
+        
+        // Touch & Mouse handling
+        function updateMouse(clientX, clientY) {
+            mouse.targetX = clientX / canvas.width;
+            mouse.targetY = 1.0 - clientY / canvas.height;
+        }
+        canvas.addEventListener('mousemove', (e) => updateMouse(e.clientX, e.clientY));
+        canvas.addEventListener('touchstart', (e) => { if(e.touches.length > 0) updateMouse(e.touches[0].clientX, e.touches[0].clientY); }, {passive: true});
+        canvas.addEventListener('touchmove', (e) => { if(e.touches.length > 0) updateMouse(e.touches[0].clientX, e.touches[0].clientY); }, {passive: true});
+
+        // BATTERY OPTIMIZATION (Prevent jumping time when paused)
+        let lastTime = Date.now();
+        let accumulatedTime = 0;
+
+        window.addEventListener("pauseWallpaper", () => isPlaying = false);
+        window.addEventListener("playWallpaper", () => { 
+            if(!isPlaying){ 
+                isPlaying = true; 
+                lastTime = Date.now(); // Reset clock delta so animation doesn't jump
+            }
+        });
+
+        function render() {
+            if(!isPlaying) {
+                requestAnimationFrame(render);
+                return;
+            }
+
+            const now = Date.now();
+            accumulatedTime += (now - lastTime) * 0.001;
+            lastTime = now;
+            
+            mouse.x += (mouse.targetX - mouse.x) * 0.05;
+            mouse.y += (mouse.targetY - mouse.y) * 0.05;
+            
+            gl.clearColor(0.0, 0.0, 0.0, 1.0);
+            gl.clear(gl.COLOR_BUFFER_BIT);
+            gl.useProgram(program);
+            
+            gl.uniform1f(uTime, accumulatedTime);
+            gl.uniform2f(uResolution, canvas.width, canvas.height);
+            gl.uniform2f(uMouse, mouse.x, mouse.y);
+            
+            const positionLocation = gl.getAttribLocation(program, 'position');
+            gl.enableVertexAttribArray(positionLocation);
+            gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+            gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+            
+            gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+            
+            requestAnimationFrame(render);
+        }
+        render();
+    }
+
+    // Bypass Android WebView dimension bugs by delaying init slightly
+    setTimeout(initWebGL, 100);
+  <\/script>
+</body>
+</html>`;
+
+export const CYBER_CORE_3D_CODE = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <style>
+    body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        background-color: #010102;
+        user-select: none;
+        font-family: sans-serif;
+        touch-action: none; /* CRITICAL: Prevents native scrolling */
+    }
+    canvas {
+        display: block;
+        width: 100vw;
+        height: 100vh;
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: 1;
+    }
+    #instructions {
+        position: absolute;
+        width: 100%;
+        bottom: 40px;
+        text-align: center;
+        color: rgba(255,255,255,0.5);
+        font-size: 0.9rem;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        z-index: 10;
+        pointer-events: none;
+    }
+  </style>
+
+  <script src="./three.min.js"><\/script>
+
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  <div id="instructions">Tap to shift spectrum</div>
+
+  <script>
+    const themes = [
+        {
+            core: [new THREE.Color(0.1, 0.0, 0.0), new THREE.Color(0.9, 0.05, 0.0), new THREE.Color(1.0, 0.4, 0.0), new THREE.Color(1.0, 0.9, 0.2)],
+            vein: { surface: new THREE.Color(0.0, 0.8, 1.0), coreA: new THREE.Color(0.8, 0.1, 0.0), coreB: new THREE.Color(1.0, 0.6, 0.0) },
+            boundary: new THREE.Color(0.0, 1.5, 3.0),
+            volcano: new THREE.Color(0xff5500),
+            dust: new THREE.Color(0x223355),
+            bg: new THREE.Color(0x010102)
+        },
+        {
+            core: [new THREE.Color(0.05, 0.0, 0.1), new THREE.Color(0.5, 0.0, 0.5), new THREE.Color(1.0, 0.0, 0.8), new THREE.Color(1.0, 0.5, 1.0)],
+            vein: { surface: new THREE.Color(0.2, 1.0, 0.2), coreA: new THREE.Color(0.8, 0.0, 0.8), coreB: new THREE.Color(0.0, 0.8, 1.0) },
+            boundary: new THREE.Color(2.0, 0.0, 1.5), 
+            volcano: new THREE.Color(0x00ff00), 
+            dust: new THREE.Color(0x2a0044),
+            bg: new THREE.Color(0x020005)
+        },
+        {
+            core: [new THREE.Color(0.05, 0.02, 0.0), new THREE.Color(0.8, 0.4, 0.0), new THREE.Color(1.0, 0.8, 0.2), new THREE.Color(1.5, 1.5, 1.5)],
+            vein: { surface: new THREE.Color(0.0, 0.3, 2.0), coreA: new THREE.Color(1.0, 0.8, 0.0), coreB: new THREE.Color(1.0, 0.3, 0.0) },
+            boundary: new THREE.Color(1.5, 1.5, 2.5), 
+            volcano: new THREE.Color(0xffffff),
+            dust: new THREE.Color(0x443311),
+            bg: new THREE.Color(0x000103)
+        }
+    ];
+    
+    let activeTheme = 0;
+    let isPlaying = true; // Battery optimization
+    let targetRotationX = 0;
+    let targetRotationY = 0;
+    let currentRotationX = 0;
+    let currentRotationY = 0;
+    let isDragging = false;
+    let previousX = 0;
+    let previousY = 0;
+
+    const snoise3GLSL = \`
+        vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+        vec4 mod289(vec4 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+        vec4 permute(vec4 x) { return mod289(((x*34.0)+1.0)*x); }
+        vec4 taylorInvSqrt(vec4 r) { return 1.79284291400159 - 0.85373472095314 * r; }
+
+        float snoise(vec3 v) {
+            const vec2  C = vec2(1.0/6.0, 1.0/3.0) ;
+            const vec4  D = vec4(0.0, 0.5, 1.0, 2.0);
+            vec3 i  = floor(v + dot(v, C.yyy) );
+            vec3 x0 = v - i + dot(i, C.xxx) ;
+            vec3 g = step(x0.yzx, x0.xyz);
+            vec3 l = 1.0 - g;
+            vec3 i1 = min( g.xyz, l.zxy );
+            vec3 i2 = max( g.xyz, l.zxy );
+            vec3 x1 = x0 - i1 + C.xxx;
+            vec3 x2 = x0 - i2 + C.yyy; 
+            vec3 x3 = x0 - D.yyy;      
+            i = mod289(i);
+            vec4 p = permute( permute( permute( i.z + vec4(0.0, i1.z, i2.z, 1.0 )) + i.y + vec4(0.0, i1.y, i2.y, 1.0 )) + i.x + vec4(0.0, i1.x, i2.x, 1.0 ));
+            float n_ = 0.142857142857; 
+            vec3  ns = n_ * D.wyz - D.xzx;
+            vec4 j = p - 49.0 * floor(p * ns.z * ns.z);  
+            vec4 x_ = floor(j * ns.z);
+            vec4 y_ = floor(j - 7.0 * x_ );    
+            vec4 x = x_ *ns.x + ns.yyyy;
+            vec4 y = y_ *ns.x + ns.yyyy;
+            vec4 h = 1.0 - abs(x) - abs(y);
+            vec4 b0 = vec4( x.xy, y.xy );
+            vec4 b1 = vec4( x.zw, y.zw );
+            vec4 s0 = floor(b0)*2.0 + 1.0;
+            vec4 s1 = floor(b1)*2.0 + 1.0;
+            vec4 sh = -step(h, vec4(0.0));
+            vec4 a0 = b0.xzyw + s0.xzyw*sh.xxyy ;
+            vec4 a1 = b1.xzyw + s1.xzyw*sh.zzww ;
+            vec3 p0 = vec3(a0.xy,h.x);
+            vec3 p1 = vec3(a0.zw,h.y);
+            vec3 p2 = vec3(a1.xy,h.z);
+            vec3 p3 = vec3(a1.zw,h.w);
+            vec4 norm = taylorInvSqrt(vec4(dot(p0,p0), dot(p1,p1), dot(p2, p2), dot(p3,p3)));
+            p0 *= norm.x; p1 *= norm.y; p2 *= norm.z; p3 *= norm.w;
+            vec4 m = max(0.5 - vec4(dot(x0,x0), dot(x1,x1), dot(x2,x2), dot(x3,x3)), 0.0);
+            m = m * m;
+            return 42.0 * dot( m*m, vec4( dot(p0,x0), dot(p1,x1), dot(p2,x2), dot(p3,x3) ) );
+        }
+    \`;
+
+    function init() {
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(themes[0].bg.getHex(), 0.012);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        // Zoom out slightly on mobile screens
+        camera.position.set(0, 0, (window.innerWidth < 600) ? 35 : 25);
+
+        const canvas = document.getElementById('canvas');
+        const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: false });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+
+        const mainGroup = new THREE.Group();
+        scene.add(mainGroup);
+
+        const CORE_RADIUS = 2.2;
+        const OUTER_RADIUS = 10.0;
+        const NUM_VEINS = 1000; 
+        const POINTS_PER_VEIN = 40;
+
+        const uniforms = {
+            time: { value: 0 },
+            cDark: { value: themes[0].core[0].clone() },
+            cRed: { value: themes[0].core[1].clone() },
+            cOrange: { value: themes[0].core[2].clone() },
+            cYellow: { value: themes[0].core[3].clone() },
+            cSurface: { value: themes[0].vein.surface.clone() },
+            cCoreA: { value: themes[0].vein.coreA.clone() },
+            cCoreB: { value: themes[0].vein.coreB.clone() },
+            boundaryColor: { value: themes[0].boundary.clone() }
+        };
+
+        // 1. AMBIENT DUST
+        const dustGeo = new THREE.BufferGeometry();
+        const dustPositions = [];
+        for(let i = 0; i < 1500; i++) {
+            dustPositions.push((Math.random() - 0.5) * 100, (Math.random() - 0.5) * 100, (Math.random() - 0.5) * 100);
+        }
+        dustGeo.setAttribute('position', new THREE.Float32BufferAttribute(dustPositions, 3));
+        const dustMat = new THREE.PointsMaterial({
+            color: themes[0].dust.clone(), size: 0.2,
+            transparent: true, opacity: 0.4, blending: THREE.AdditiveBlending
+        });
+        const dustMesh = new THREE.Points(dustGeo, dustMat);
+        scene.add(dustMesh);
+
+        // 2. GLOWING CORE
+        const coreGeo = new THREE.SphereGeometry(CORE_RADIUS, 64, 64);
+        const coreMat = new THREE.ShaderMaterial({
+            uniforms: uniforms,
+            vertexShader: \`
+                uniform float time;
+                varying vec3 vPosition;
+                varying vec3 vNormal;
+                \${snoise3GLSL}
+                void main() {
+                    vPosition = position;
+                    vNormal = normal;
+                    float displacement = snoise(position * 1.8 + time * 0.4) * 0.15;
+                    vec3 newPosition = position + normal * displacement;
+                    gl_Position = projectionMatrix * modelViewMatrix * vec4(newPosition, 1.0);
+                }
+            \`,
+            fragmentShader: \`
+                uniform float time;
+                uniform vec3 cDark;
+                uniform vec3 cRed;
+                uniform vec3 cOrange;
+                uniform vec3 cYellow;
+                varying vec3 vPosition;
+                varying vec3 vNormal;
+                \${snoise3GLSL}
+                void main() {
+                    float n1 = snoise(vPosition * 1.5 - time * 0.5);
+                    float n2 = snoise(vPosition * 4.0 + time * 0.3);
+                    float noiseVal = n1 * 0.6 + n2 * 0.4;
+                    vec3 color;
+                    if (noiseVal < -0.1) {
+                        color = mix(cDark, cRed, smoothstep(-0.5, -0.1, noiseVal));
+                    } else if (noiseVal < 0.3) {
+                        color = mix(cRed, cOrange, smoothstep(-0.1, 0.3, noiseVal));
+                    } else {
+                        color = mix(cOrange, cYellow, smoothstep(0.3, 0.8, noiseVal));
+                    }
+                    float fresnel = dot(vNormal, vec3(0.0, 0.0, 1.0));
+                    fresnel = clamp(1.0 - fresnel, 0.0, 1.0);
+                    color += cOrange * pow(fresnel, 2.0) * 0.8;
+                    color *= 1.8; // Boost brightness since we removed Bloom Pass
+                    gl_FragColor = vec4(color, 1.0);
+                }
+            \`
+        });
+        const coreMesh = new THREE.Mesh(coreGeo, coreMat);
+        mainGroup.add(coreMesh);
+
+        // HELPER
+        function getPointOnSphere(radius) {
+            const u = Math.random(), v = Math.random();
+            const theta = 2 * Math.PI * u, phi = Math.acos(2 * v - 1);
+            return new THREE.Vector3(
+                radius * Math.sin(phi) * Math.cos(theta),
+                radius * Math.sin(phi) * Math.sin(theta),
+                radius * Math.cos(phi)
+            );
+        }
+
+        // 3. ENERGY VEINS
+        const veinPositions = [], veinProgress = [], veinOffsets = [], veinRands = [];
+        for (let i = 0; i < NUM_VEINS; i++) {
+            const start = getPointOnSphere(OUTER_RADIUS);
+            const end = start.clone().normalize().multiplyScalar(CORE_RADIUS * 0.85); 
+            const mid = new THREE.Vector3().lerpVectors(start, end, 0.5);
+            mid.normalize().multiplyScalar(OUTER_RADIUS * 0.55);
+            
+            const tangent = new THREE.Vector3().crossVectors(start, new THREE.Vector3(0,1,0)).normalize();
+            const bitangent = new THREE.Vector3().crossVectors(start, tangent).normalize();
+            mid.add(tangent.multiplyScalar((Math.random() - 0.5) * 6));
+            mid.add(bitangent.multiplyScalar((Math.random() - 0.5) * 6));
+
+            const curve = new THREE.QuadraticBezierCurve3(start, mid, end);
+            const points = curve.getPoints(POINTS_PER_VEIN);
+            const offset = Math.random(), randSeed = Math.random();
+
+            for (let j = 0; j < POINTS_PER_VEIN; j++) {
+                veinPositions.push(points[j].x, points[j].y, points[j].z);
+                veinPositions.push(points[j+1].x, points[j+1].y, points[j+1].z);
+                veinProgress.push(j / POINTS_PER_VEIN, (j + 1) / POINTS_PER_VEIN);
+                veinOffsets.push(offset, offset);
+                veinRands.push(randSeed, randSeed);
+            }
+        }
+        const veinGeo = new THREE.BufferGeometry();
+        veinGeo.setAttribute('position', new THREE.Float32BufferAttribute(veinPositions, 3));
+        veinGeo.setAttribute('progress', new THREE.Float32BufferAttribute(veinProgress, 1));
+        veinGeo.setAttribute('offset', new THREE.Float32BufferAttribute(veinOffsets, 1));
+        veinGeo.setAttribute('randomSeed', new THREE.Float32BufferAttribute(veinRands, 1));
+
+        const veinMat = new THREE.ShaderMaterial({
+            uniforms: uniforms,
+            vertexShader: \`
+                attribute float progress;
+                attribute float offset;
+                attribute float randomSeed;
+                varying float vProgress;
+                varying float vOffset;
+                varying float vRandom;
+                void main() {
+                    vProgress = progress;
+                    vOffset = offset;
+                    vRandom = randomSeed;
+                    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                }
+            \`,
+            fragmentShader: \`
+                uniform float time;
+                uniform vec3 cSurface;
+                uniform vec3 cCoreA;
+                uniform vec3 cCoreB;
+                varying float vProgress;
+                varying float vOffset;
+                varying float vRandom;
+                void main() {
+                    vec3 targetCoreColor = mix(cCoreA, cCoreB, vRandom);
+                    vec3 color = mix(cSurface, targetCoreColor, pow(vProgress, 1.5));
+                    float speed = 0.3;
+                    float phase = vProgress - time * speed + vOffset * 10.0;
+                    float flow = fract(phase);
+                    float pulse = exp(-flow * 10.0);
+                    vec3 pulseGlow = color * pulse * 12.0; 
+                    color += pulseGlow;
+                    float alpha = (0.02 + pulse * 0.9) * smoothstep(0.0, 0.05, vProgress) * smoothstep(1.0, 0.8, vProgress);
+                    gl_FragColor = vec4(color, alpha);
+                }
+            \`,
+            transparent: true, blending: THREE.AdditiveBlending, depthWrite: false
+        });
+        const veinMesh = new THREE.LineSegments(veinGeo, veinMat);
+        mainGroup.add(veinMesh);
+
+        // 4. PROCEDURAL PLANETARY SHELL (Replaces offline image)
+        const earthGlobeGeo = new THREE.SphereGeometry(OUTER_RADIUS * 0.995, 128, 128);
+        const earthGlobeMat = new THREE.ShaderMaterial({
+            uniforms: uniforms,
+            vertexShader: \`
+                varying vec3 vPosition;
+                varying vec3 vNormal;
+                void main() {
+                    vPosition = position;
+                    vNormal = normalize(normalMatrix * normal);
+                    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                }
+            \`,
+            fragmentShader: \`
+                uniform float time;
+                uniform vec3 boundaryColor;
+                varying vec3 vPosition;
+                varying vec3 vNormal;
+                \${snoise3GLSL}
+
+                void main() {
+                    // Procedural continental edges using 3D noise
+                    float n = snoise(vPosition * 0.3 + time * 0.05);
+                    float edge = 1.0 - smoothstep(0.0, 0.03, abs(n));
+                    
+                    vec3 color = boundaryColor * edge * 3.0;
+                    float fresnel = pow(1.0 - max(dot(vNormal, vec3(0.0, 0.0, 1.0)), 0.0), 3.0);
+                    color += boundaryColor * fresnel * 0.8;
+                    float alpha = edge * 0.8 + fresnel * 0.3;
+                    
+                    gl_FragColor = vec4(color, alpha);
+                }
+            \`,
+            transparent: true, blending: THREE.AdditiveBlending, depthWrite: false
+        });
+        const earthGlobeMesh = new THREE.Mesh(earthGlobeGeo, earthGlobeMat);
+        mainGroup.add(earthGlobeMesh);
+
+        // 5. VOLCANO / SHELL PARTICLES
+        const volcanoPoints = [];
+        for (let i = 0; i < 150; i++) volcanoPoints.push(getPointOnSphere(OUTER_RADIUS));
+        const volcanoGeo = new THREE.BufferGeometry().setFromPoints(volcanoPoints);
+        const volcanoMat = new THREE.ShaderMaterial({
+            uniforms: {
+                color: { value: themes[0].volcano.clone() },
+                size: { value: 7.0 * window.devicePixelRatio },
+                time: uniforms.time
+            },
+            vertexShader: \`
+                uniform float size;
+                void main() {
+                    vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+                    gl_PointSize = size * (20.0 / -mvPosition.z);
+                    gl_Position = projectionMatrix * mvPosition;
+                }
+            \`,
+            fragmentShader: \`
+                uniform vec3 color;
+                uniform float time;
+                void main() {
+                    vec2 pt = gl_PointCoord - vec2(0.5);
+                    if(abs(pt.x) > 0.35 || abs(pt.y) > 0.35) discard;
+                    float throb = sin(time * 3.0 + gl_FragCoord.x) * 0.5 + 0.5;
+                    gl_FragColor = vec4(color * (1.5 + throb), 0.9);
+                }
+            \`,
+            transparent: true, blending: THREE.AdditiveBlending, depthWrite: false
+        });
+        const volcanoMesh = new THREE.Points(volcanoGeo, volcanoMat);
+        mainGroup.add(volcanoMesh);
+
+        // --- TOUCH & INTERACTION ENGINE ---
+        document.addEventListener('pointerdown', (e) => {
+            isDragging = true;
+            previousX = e.clientX || (e.touches ? e.touches[0].clientX : 0);
+            previousY = e.clientY || (e.touches ? e.touches[0].clientY : 0);
+            
+            // Cycle Themes on Tap
+            activeTheme = (activeTheme + 1) % themes.length;
+        });
+        document.addEventListener('pointermove', (e) => {
+            if (!isDragging) return;
+            let clientX = e.clientX || (e.touches ? e.touches[0].clientX : 0);
+            let clientY = e.clientY || (e.touches ? e.touches[0].clientY : 0);
+            let deltaX = clientX - previousX;
+            let deltaY = clientY - previousY;
+            targetRotationY += deltaX * 0.005;
+            targetRotationX += deltaY * 0.005;
+            previousX = clientX;
+            previousY = clientY;
+        });
+        document.addEventListener('pointerup', () => isDragging = false);
+
+        // BATTERY OPTIMIZATION
+        window.addEventListener("pauseWallpaper", () => isPlaying = false);
+        window.addEventListener("playWallpaper", () => {
+            if(!isPlaying){ isPlaying = true; clock.getDelta(); animate(); }
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        const clock = new THREE.Clock();
+        const LERP_SPEED = 0.05;
+
+        function animate() {
+            if(!isPlaying) { requestAnimationFrame(animate); return; }
+
+            const delta = clock.getDelta();
+            const elapsedTime = clock.getElapsedTime();
+
+            uniforms.time.value = elapsedTime;
+
+            // Transition Theme Colors
+            const tgt = themes[activeTheme];
+            uniforms.cDark.value.lerp(tgt.core[0], LERP_SPEED);
+            uniforms.cRed.value.lerp(tgt.core[1], LERP_SPEED);
+            uniforms.cOrange.value.lerp(tgt.core[2], LERP_SPEED);
+            uniforms.cYellow.value.lerp(tgt.core[3], LERP_SPEED);
+            uniforms.cSurface.value.lerp(tgt.vein.surface, LERP_SPEED);
+            uniforms.cCoreA.value.lerp(tgt.vein.coreA, LERP_SPEED);
+            uniforms.cCoreB.value.lerp(tgt.vein.coreB, LERP_SPEED);
+            uniforms.boundaryColor.value.lerp(tgt.boundary, LERP_SPEED);
+            volcanoMat.uniforms.color.value.lerp(tgt.volcano, LERP_SPEED);
+            dustMat.color.lerp(tgt.dust, LERP_SPEED);
+            scene.fog.color.lerp(tgt.bg, LERP_SPEED);
+            renderer.setClearColor(scene.fog.color); 
+
+            // Handle Camera/Rotation Physics
+            dustMesh.rotation.y += 0.02 * delta;
+            
+            // Auto spin + Drag spin
+            targetRotationY += 0.1 * delta;
+            currentRotationX += (targetRotationX - currentRotationX) * 0.1;
+            currentRotationY += (targetRotationY - currentRotationY) * 0.1;
+            
+            // Limit vertical rotation so user can't flip it upside down
+            currentRotationX = Math.max(-Math.PI/2.5, Math.min(Math.PI/2.5, currentRotationX));
+            targetRotationX = Math.max(-Math.PI/2.5, Math.min(Math.PI/2.5, targetRotationX));
+
+            mainGroup.rotation.x = currentRotationX;
+            mainGroup.rotation.y = currentRotationY;
+
+            renderer.render(scene, camera);
+            requestAnimationFrame(animate);
+        }
+
+        renderer.setClearColor(scene.fog.color);
+        animate();
+    }
+
+    // Bypass Android WebView sizing bug
+    setTimeout(init, 100);
+  <\/script>
+</body>
+</html>`;
+
 export const MOCK_WALLPAPERS: Wallpaper[] = [
 
   {
@@ -3593,6 +4409,24 @@ export const MOCK_WALLPAPERS: Wallpaper[] = [
     type: 'interactive',
     category: { id: 'live', name: { en: 'Interactive' } },
     indexCode: DRAGON_3D_CODE
+  },
+  {
+    _id: 'html_prism',
+    url: 'https://images.unsplash.com/photo-1517482811403-125032338167?q=80&w=1080', // Replace with a nice cartoon sky image
+    thumbnail: 'https://images.unsplash.com/photo-1517482811403-125032338167?q=80&w=400',
+    author: 'Toss Studio',
+    type: 'interactive',
+    category: { id: 'live', name: { en: 'Interactive' } },
+    indexCode: PRISM_SHADER_CODE
+  },
+  {
+    _id: 'html_cyber_core',
+    url: 'https://images.unsplash.com/photo-1517482811403-125032338167?q=80&w=1080', // Replace with a nice cartoon sky image
+    thumbnail: 'https://images.unsplash.com/photo-1517482811403-125032338167?q=80&w=400',
+    author: 'Toss Studio',
+    type: 'interactive',
+    category: { id: 'live', name: { en: 'Interactive' } },
+    indexCode: CYBER_CORE_3D_CODE
   },
   {
     _id: 'abstract_1',
