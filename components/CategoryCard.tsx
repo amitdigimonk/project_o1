@@ -1,6 +1,5 @@
-import { commonStyles } from '@/constants/commonStyles';
-import { useTheme } from '@/hooks/useTheme';
 import { Category } from '@/types';
+import { BlurView } from 'expo-blur';
 import { Image } from 'expo-image';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import React from 'react';
@@ -12,6 +11,7 @@ import CustomText from './CustomText';
 interface CategoryCardProps {
   category: Category;
   index?: number;
+  isHero?: boolean;
   onPress: (category: Category) => void;
 }
 
@@ -32,24 +32,19 @@ const CategoryVideo = ({ source }: { source: string }) => {
   );
 };
 
-const CategoryCard: React.FC<CategoryCardProps> = React.memo(({ category, index = 0, onPress }) => {
-  const { colors } = useTheme();
+const CategoryCard: React.FC<CategoryCardProps> = React.memo(({ category, index = 0, isHero = false, onPress }) => {
   const { t } = useTranslation();
   const isVideo = category.type === 'video';
 
-  const handlePress = () => {
-    onPress(category);
-  };
-
   return (
     <Animated.View
-      entering={FadeInUp.delay(index * 80).springify().damping(18).stiffness(140)}
-      style={styles.cardWrapper}
+      entering={FadeInUp.delay(index * 60)}
+      style={[styles.cardWrapper, isHero && styles.heroWrapper]}
     >
       <TouchableOpacity
-        activeOpacity={0.9}
-        style={[styles.categoryCard, commonStyles.cardShadow]}
-        onPress={handlePress}
+        activeOpacity={0.85}
+        style={[styles.categoryCard, isHero && styles.heroCard]}
+        onPress={() => onPress(category)}
       >
         {isVideo ? (
           <CategoryVideo source={category.image} />
@@ -62,12 +57,16 @@ const CategoryCard: React.FC<CategoryCardProps> = React.memo(({ category, index 
           />
         )}
         <View style={styles.overlay} />
-        <View style={styles.cardContent}>
-          <CustomText variant="body" color="#FFFFFF">{category.count}</CustomText>
-          <CustomText variant="subheading" color="#FFFFFF">
+        <BlurView intensity={28} tint="dark" style={styles.cardContent}>
+          <CustomText style={[styles.cardName, isHero && styles.heroName]} color="#FFFFFF">
             {typeof category.name === 'string' ? category.name : t(`categories.${category.title}`)}
           </CustomText>
-        </View>
+          {category.count ? (
+            <CustomText style={styles.cardCount} color="rgba(255,255,255,0.6)">
+              {category.count}
+            </CustomText>
+          ) : null}
+        </BlurView>
       </TouchableOpacity>
     </Animated.View>
   );
@@ -76,31 +75,48 @@ const CategoryCard: React.FC<CategoryCardProps> = React.memo(({ category, index 
 const styles = StyleSheet.create({
   cardWrapper: {
     width: '48%',
-    marginBottom: 16,
+    marginBottom: 12,
+  },
+  heroWrapper: {
+    width: '100%',
   },
   categoryCard: {
     width: '100%',
-    height: 220,
-    borderRadius: 24,
+    height: 180,
+    borderRadius: 12,
     overflow: 'hidden',
     position: 'relative',
-    ...commonStyles.cardShadow,
+  },
+  heroCard: {
+    height: 240,
   },
   cardImage: {
     ...StyleSheet.absoluteFillObject,
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.3)',
+    backgroundColor: 'rgba(0,0,0,0.15)',
   },
   cardContent: {
     position: 'absolute',
     bottom: 0,
     left: 0,
-    padding: 20,
     width: '100%',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    gap: 2,
+  },
+  cardName: {
+    fontSize: 15,
+    fontWeight: '600',
+    letterSpacing: -0.2,
+  },
+  heroName: {
+    fontSize: 20,
+  },
+  cardCount: {
+    fontSize: 12,
   },
 });
-
 
 export default CategoryCard;

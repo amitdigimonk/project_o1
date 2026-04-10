@@ -128,16 +128,13 @@ export default function SettingsScreen() {
         value?: string;
     }) => (
         <TouchableOpacity
-            style={[styles.item, { backgroundColor: colors.card }]}
+            style={[styles.item, { borderBottomColor: colors.border }]}
             onPress={onPress}
-            activeOpacity={0.7}
+            activeOpacity={0.5}
         >
-            <View style={[styles.iconContainer, { backgroundColor: colors.primary + '15' }]}>
-                <Ionicons name={icon} size={22} color={colors.primary} />
-            </View>
+            <Ionicons name={icon} size={18} color={colors.textMuted} style={{ marginRight: 14 }} />
             <CustomText variant="body" style={styles.label}>{label}</CustomText>
-            {value && <CustomText variant="body" style={{ color: colors.textMuted, marginRight: 8 }}>{value}</CustomText>}
-            <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+            {value && <CustomText style={{ color: colors.textMuted, fontSize: 13 }}>{value}</CustomText>}
         </TouchableOpacity>
     );
 
@@ -145,9 +142,9 @@ export default function SettingsScreen() {
         <View style={[commonStyles.screenContainer, { backgroundColor: colors.background }]}>
             <View style={styles.header}>
                 <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-                    <Ionicons name="chevron-back" size={24} color={colors.text} />
+                    <Ionicons name="chevron-back" size={20} color={colors.text} />
                 </TouchableOpacity>
-                <CustomText variant="heading" style={{ fontSize: 24 }}>{t('settings.title')}</CustomText>
+                <CustomText style={[styles.headerTitle, { color: colors.text }]}>{t('settings.title')}</CustomText>
             </View>
  
             <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -337,46 +334,44 @@ export default function SettingsScreen() {
 
 const styles = StyleSheet.create({
     header: {
-        paddingTop: 60,
-        paddingBottom: 20,
+        paddingTop: 56,
+        paddingBottom: 8,
         paddingHorizontal: 20,
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'center',
+        gap: 10,
     },
     backButton: {
-        position: 'absolute',
-        left: 20,
-        bottom: 22,
+        padding: 4,
+    },
+    headerTitle: {
+        fontSize: 12,
+        letterSpacing: 2,
+        textTransform: 'uppercase',
+        fontWeight: '600',
+        opacity: 0.5,
     },
     scrollContent: {
         padding: 20,
     },
     section: {
-        marginBottom: 32,
+        marginBottom: 28,
     },
     sectionTitle: {
-        marginBottom: 12,
-        marginLeft: 4,
+        marginBottom: 4,
+        fontSize: 11,
+        letterSpacing: 1.5,
+        opacity: 0.4,
     },
     item: {
         flexDirection: 'row',
         alignItems: 'center',
-        padding: 16,
-        borderRadius: 20,
-        marginBottom: 12,
-    },
-    iconContainer: {
-        width: 40,
-        height: 40,
-        borderRadius: 12,
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginRight: 16,
+        paddingVertical: 14,
+        borderBottomWidth: StyleSheet.hairlineWidth,
     },
     label: {
         flex: 1,
-        fontWeight: '600',
+        fontWeight: '400',
     },
     footer: {
         paddingBottom: 40,
@@ -395,9 +390,11 @@ const styles = StyleSheet.create({
         maxHeight: '60%',
     },
     modalTitle: {
-        fontSize: 20,
-        marginBottom: 20,
+        fontSize: 15,
+        fontWeight: '600',
+        marginBottom: 16,
         textAlign: 'center',
+        letterSpacing: 0.3,
     },
     languageOption: {
         flexDirection: 'row',

@@ -33,10 +33,13 @@
     "caption": "VIBE WALLS",
     "heading": "Your Daily Vibe",
     "subtext": "Explore thousands of premium high-definition wallpapers, refreshed daily.",
-    "browseButton": "Browse All Walls"
+    "browseButton": "Browse All Walls",
+    "search": "Search categories...",
+    "noResults": "No categories found"
   },
   "preview": {
     "discover": "Discover Vibes",
+    "noResults": "No wallpapers found",
     "filters": {
       "All": "All",
       "Minimal": "Minimal",
@@ -59,7 +62,8 @@
     "interactiveMissing": "Interactive wallpaper data is missing.",
     "interactiveApplied": "Live wallpaper is ready! Choose it from the picker.",
     "tryAgain": "Try Again",
-    "quickApply": "Long press to quick-apply"
+    "quickApply": "Long press to quick-apply",
+    "swipeUpHint": "Swipe up for details"
   },
   "bottomSheet": {
     "title": "Set Wallpaper",

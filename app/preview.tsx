@@ -21,49 +21,48 @@ import { Category, Wallpaper } from '@/types';
 
 const styles = StyleSheet.create({
     headerContainer: {
-        paddingTop: 60,
-        paddingBottom: 10,
+        paddingTop: 56,
+        paddingBottom: 8,
         paddingHorizontal: 20,
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'center',
+        gap: 10,
     },
     backBtn: {
-        position: 'absolute',
-        left: 20,
-        bottom: 12,
-        zIndex: 1,
-        padding: 5,
+        padding: 4,
+    },
+    headerTitle: {
+        fontSize: 12,
+        letterSpacing: 2,
+        textTransform: 'uppercase',
+        fontWeight: '600',
+        opacity: 0.5,
     },
     filterScroll: {
-        paddingHorizontal: 15,
+        paddingHorizontal: 16,
         alignItems: 'center',
     },
-    filterPill: {
-        paddingHorizontal: 20,
+    filterItem: {
+        paddingHorizontal: 10,
         paddingVertical: 8,
-        borderRadius: 20,
-        marginHorizontal: 5,
+        alignItems: 'center',
+        gap: 4,
+    },
+    filterDot: {
+        width: 4,
+        height: 4,
+        borderRadius: 2,
     },
     listContainer: {
-        padding: 10,
+        padding: 2,
         paddingBottom: 40,
-    },
-    imageCard: {
-        flex: 1,
-        borderRadius: 16,
-        margin: 6,
-        overflow: 'hidden',
-    },
-    image: {
-        width: '100%',
     },
     errorContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        padding: 20,
-    }
+        gap: 16,
+    },
 });
 
 // Removed ImageListItem as it is now in components/WallpaperCard.tsx
@@ -223,78 +222,76 @@ export default function PreviewScreen() {
 
             <View style={styles.headerContainer}>
                 <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-                    <Ionicons name="chevron-back" size={24} color={colors.text} />
+                    <Ionicons name="chevron-back" size={20} color={colors.text} />
                 </TouchableOpacity>
-                <CustomText variant="heading" style={{ fontSize: 24, letterSpacing: -0.5 }}>
+                <CustomText style={[styles.headerTitle, { color: colors.text }]}>
                     {isBrowseAll ? t('preview.discover') : initialCategory}
                 </CustomText>
             </View>
 
             {isBrowseAll && (
-                <View style={{ height: 60 }}>
-                    <ScrollView
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        contentContainerStyle={styles.filterScroll}
-                    >
-                        {/* "All" Filter */}
-                        <TouchableOpacity
-                            style={[
-                                styles.filterPill,
-                                { backgroundColor: !selectedCategoryId || selectedCategoryId === 'All' ? colors.text : 'transparent' }
-                            ]}
-                            onPress={() => setSelectedCategoryId(undefined)}
-                        >
-                            <CustomText
-                                variant="body"
-                                color={!selectedCategoryId || selectedCategoryId === 'All' ? colors.background : colors.textMuted}
-                                style={{ fontWeight: !selectedCategoryId || selectedCategoryId === 'All' ? 'bold' : 'normal' }}
-                            >
-                                {t('preview.filters.All')}
-                            </CustomText>
-                        </TouchableOpacity>
-
-                        {/* Dynamic Categories */}
-                        {categories.map((cat) => {
-                            const isActive = selectedCategoryId === cat.id;
-                            return (
-                                <TouchableOpacity
-                                    key={cat.id}
-                                    style={[
-                                        styles.filterPill,
-                                        { backgroundColor: isActive ? colors.text : 'transparent' }
-                                    ]}
-                                    onPress={() => setSelectedCategoryId(cat.id)}
+                <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.filterScroll}
+                    style={{ flexGrow: 0 }}
+                >
+                    {/* "All" Filter */}
+                    {(() => {
+                        const isAllActive = !selectedCategoryId || selectedCategoryId === 'All';
+                        return (
+                            <TouchableOpacity style={styles.filterItem} onPress={() => setSelectedCategoryId(undefined)}>
+                                <CustomText
+                                    variant="body"
+                                    color={isAllActive ? colors.text : colors.textMuted}
+                                    style={{ fontSize: 13, fontWeight: isAllActive ? '700' : '400' }}
                                 >
-                                    <CustomText
-                                        variant="body"
-                                        color={isActive ? colors.background : colors.textMuted}
-                                        style={{ fontWeight: isActive ? 'bold' : 'normal' }}
-                                    >
-                                        {typeof cat.name === 'string' ? cat.name : t(`categories.${cat.title}`)}
-                                    </CustomText>
-                                </TouchableOpacity>
-                            );
-                        })}
-                    </ScrollView>
-                </View>
+                                    {t('preview.filters.All')}
+                                </CustomText>
+                                {isAllActive && <View style={[styles.filterDot, { backgroundColor: colors.primary }]} />}
+                            </TouchableOpacity>
+                        );
+                    })()}
+
+                    {/* Dynamic Categories */}
+                    {categories.map((cat) => {
+                        const isActive = selectedCategoryId === cat.id;
+                        return (
+                            <TouchableOpacity
+                                key={cat.id}
+                                style={styles.filterItem}
+                                onPress={() => {
+                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                    setSelectedCategoryId(cat.id);
+                                }}
+                            >
+                                <CustomText
+                                    variant="body"
+                                    color={isActive ? colors.text : colors.textMuted}
+                                    style={{ fontSize: 13, fontWeight: isActive ? '700' : '400' }}
+                                >
+                                    {typeof cat.name === 'string' ? cat.name : t(`categories.${cat.title}`)}
+                                </CustomText>
+                                {isActive && <View style={[styles.filterDot, { backgroundColor: colors.primary }]} />}
+                            </TouchableOpacity>
+                        );
+                    })}
+                </ScrollView>
             )}
 
             {isLoading ? (
                 <WallpaperGridSkeleton />
             ) : error ? (
                 <View style={styles.errorContainer}>
-                    <Ionicons name="alert-circle-outline" size={48} color="#EF4444" />
-                    <CustomText style={{ marginTop: 10, textAlign: 'center' }}>{error}</CustomText>
+                    <CustomText variant="body" color={colors.textMuted} style={{ textAlign: 'center' }}>{error}</CustomText>
                     <TouchableOpacity
-                        style={{ marginTop: 20, padding: 10, backgroundColor: colors.primary, borderRadius: 8 }}
                         onPress={() => {
                             setError(null);
                             setIsLoading(true);
                             fetchWallpapersByCategory(selectedCategoryId).then(setWallpapers).catch((e: Error) => setError(e.message)).finally(() => setIsLoading(false));
                         }}
                     >
-                        <CustomText color="#FFF">{t('imageViewer.tryAgain')}</CustomText>
+                        <CustomText variant="body" color={colors.primary}>{t('imageViewer.tryAgain')}</CustomText>
                     </TouchableOpacity>
                 </View>
             ) : (
@@ -329,7 +326,7 @@ export default function PreviewScreen() {
                         }
                         ListEmptyComponent={() => (
                             <View style={[commonStyles.centerAlign, { marginTop: 100 }]}>
-                                <CustomText color={colors.textMuted}>No wallpapers found</CustomText>
+                                <CustomText color={colors.textMuted}>{t('preview.noResults')}</CustomText>
                             </View>
                         )}
                     />

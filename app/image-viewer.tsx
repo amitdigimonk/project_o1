@@ -13,8 +13,8 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Dimensions, FlatList, Platform, Pressable, StyleSheet, View } from 'react-native';
-import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
-import Animated, { Easing, Extrapolate, interpolate, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import Animated, { Easing, Extrapolate, interpolate, useAnimatedStyle, useSharedValue, withDelay, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const METADATA_HEIGHT = 280;
@@ -29,6 +29,21 @@ interface GalleryItemProps {
 const GalleryItem = React.memo(({ item, colors, t, onApply }: GalleryItemProps) => {
     const translateY = useSharedValue(0);
     const context = useSharedValue({ y: 0 });
+    const hintOpacity = useSharedValue(1);
+    const hintTranslateY = useSharedValue(0);
+
+    useEffect(() => {
+        // Bounce up 3 times, then fade out
+        hintTranslateY.value = withRepeat(
+            withSequence(
+                withTiming(-10, { duration: 450, easing: Easing.out(Easing.quad) }),
+                withTiming(0, { duration: 450, easing: Easing.in(Easing.quad) })
+            ),
+            3,
+            false
+        );
+        hintOpacity.value = withDelay(2800, withTiming(0, { duration: 400 }));
+    }, []);
 
     const gesture = Gesture.Pan()
         .onStart(() => {
@@ -67,6 +82,14 @@ const GalleryItem = React.memo(({ item, colors, t, onApply }: GalleryItemProps) 
         return {
             opacity,
             pointerEvents: opacity < 0.1 ? 'none' : 'auto'
+        };
+    });
+
+    const animatedHintStyle = useAnimatedStyle(() => {
+        const swipeFade = interpolate(translateY.value, [0, -60], [1, 0], 'clamp');
+        return {
+            opacity: hintOpacity.value * swipeFade,
+            transform: [{ translateY: hintTranslateY.value }],
         };
     });
 
@@ -135,6 +158,10 @@ const GalleryItem = React.memo(({ item, colors, t, onApply }: GalleryItemProps) 
 
             {/* Floating Apply Button (Visible only when sheet is collapsed) */}
             <Animated.View style={[styles.footer, animatedFooterStyle]}>
+                <Animated.View style={[styles.swipeHint, animatedHintStyle]}>
+                    <Ionicons name="chevron-up" size={14} color="rgba(255,255,255,0.85)" />
+                    <CustomText style={styles.swipeHintText}>{t('imageViewer.swipeUpHint')}</CustomText>
+                </Animated.View>
                 <Pressable
                     style={[styles.applyButton, { backgroundColor: colors.primary }]}
                     onPress={() => onApply()}
@@ -253,61 +280,59 @@ export default function ImageViewerScreen() {
     }
 
     return (
-        <GestureHandlerRootView style={{ flex: 1 }}>
-            <View style={[styles.container, { backgroundColor: colors.background }]}>
-                <FlatList
-                    data={wallpapers}
-                    renderItem={renderItem}
-                    keyExtractor={(item) => item._id}
-                    horizontal
-                    pagingEnabled
-                    showsHorizontalScrollIndicator={false}
-                    initialScrollIndex={initialIndex ? parseInt(initialIndex as string) : 0}
-                    getItemLayout={(_, index) => ({
-                        length: SCREEN_WIDTH,
-                        offset: SCREEN_WIDTH * index,
-                        index,
-                    })}
-                    onViewableItemsChanged={onViewableItemsChanged}
-                    viewabilityConfig={{ itemVisiblePercentThreshold: 50 }}
-                    removeClippedSubviews={Platform.OS === 'android'}
-                    maxToRenderPerBatch={2}
-                    windowSize={3}
-                    initialNumToRender={1}
-                />
+        <View style={[styles.container, { backgroundColor: colors.background }]}>
+            <FlatList
+                data={wallpapers}
+                renderItem={renderItem}
+                keyExtractor={(item) => item._id}
+                horizontal
+                pagingEnabled
+                showsHorizontalScrollIndicator={false}
+                initialScrollIndex={initialIndex ? parseInt(initialIndex as string) : 0}
+                getItemLayout={(_, index) => ({
+                    length: SCREEN_WIDTH,
+                    offset: SCREEN_WIDTH * index,
+                    index,
+                })}
+                onViewableItemsChanged={onViewableItemsChanged}
+                viewabilityConfig={{ itemVisiblePercentThreshold: 50 }}
+                removeClippedSubviews={Platform.OS === 'android'}
+                maxToRenderPerBatch={2}
+                windowSize={3}
+                initialNumToRender={1}
+            />
 
-                <Pressable
-                    style={styles.backButton}
-                    onPress={() => router.back()}
-                    disabled={isApplying}
-                >
-                    <Ionicons name="chevron-back" size={28} color="#FFFFFF" />
-                </Pressable>
+            <Pressable
+                style={styles.backButton}
+                onPress={() => router.back()}
+                disabled={isApplying}
+            >
+                <Ionicons name="chevron-back" size={28} color="#FFFFFF" />
+            </Pressable>
 
-                {wallpapers.length > 1 && (
-                    <View style={styles.pageIndicator}>
-                        <CustomText variant="body" style={styles.pageText}>
-                            {currentPage + 1} / {wallpapers.length}
-                        </CustomText>
-                    </View>
-                )}
+            {wallpapers.length > 1 && (
+                <View style={styles.pageIndicator}>
+                    <CustomText variant="body" style={styles.pageText}>
+                        {currentPage + 1} / {wallpapers.length}
+                    </CustomText>
+                </View>
+            )}
 
-                <WallpaperBottomSheet
-                    isVisible={isSheetVisible}
-                    onClose={() => setIsSheetVisible(false)}
-                    onSelect={(location) => {
-                        setIsSheetVisible(false);
-                        applyToLocation(location);
-                    }}
-                />
+            <WallpaperBottomSheet
+                isVisible={isSheetVisible}
+                onClose={() => setIsSheetVisible(false)}
+                onSelect={(location) => {
+                    setIsSheetVisible(false);
+                    applyToLocation(location);
+                }}
+            />
 
-                {isApplying && (
-                    <View style={styles.loadingOverlay}>
-                        <ActivityIndicator size="large" color="#FFFFFF" />
-                    </View>
-                )}
-            </View>
-        </GestureHandlerRootView>
+            {isApplying && (
+                <View style={styles.loadingOverlay}>
+                    <ActivityIndicator size="large" color="#FFFFFF" />
+                </View>
+            )}
+        </View>
     );
 }
 
@@ -318,7 +343,7 @@ const styles = StyleSheet.create({
     },
     galleryItemContainer: {
         width: SCREEN_WIDTH,
-        height: SCREEN_HEIGHT,
+        // height: SCREEN_HEIGHT,
     },
     imageContainer: {
         width: '100%',
@@ -423,5 +448,17 @@ const styles = StyleSheet.create({
         color: '#FFFFFF',
         fontSize: 13,
         fontWeight: '600',
-    }
+    },
+    swipeHint: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 4,
+        marginBottom: 12,
+    },
+    swipeHintText: {
+        color: 'rgba(255,255,255,0.85)',
+        fontSize: 12,
+        fontWeight: '500',
+    },
 });

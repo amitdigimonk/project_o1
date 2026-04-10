@@ -33,10 +33,13 @@
     "caption": "VIBE WALLS",
     "heading": "Votre Ambiance Quotidienne",
     "subtext": "Explorez des milliers de fonds d'écran haute définition premium, actualisés quotidiennement.",
-    "browseButton": "Parcourir tout"
+    "browseButton": "Parcourir tout",
+    "search": "Rechercher des catégories...",
+    "noResults": "Aucune catégorie trouvée"
   },
   "preview": {
     "discover": "Découvrir les Vibes",
+    "noResults": "Aucun fond d'écran trouvé",
     "filters": {
       "All": "Tout",
       "Minimal": "Minimal",
@@ -55,7 +58,8 @@
     "interactiveMissing": "Les données du fond d'écran interactif sont manquantes.",
     "interactiveApplied": "Le fond d'écran animé est prêt ! Choisissez-le dans le sélecteur.",
     "tryAgain": "Réessayer",
-    "quickApply": "Appui long pour appliquer rapidement"
+    "quickApply": "Appui long pour appliquer rapidement",
+    "swipeUpHint": "Glisser vers le haut pour les détails"
   },
   "bottomSheet": {
     "title": "Appliquer",

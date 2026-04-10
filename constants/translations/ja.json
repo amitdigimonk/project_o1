@@ -33,10 +33,13 @@
     "caption": "バイブウォール",
     "heading": "今日のバイブ",
     "subtext": "毎日更新される、数千のプレミアム高画質壁紙を探索しましょう。",
-    "browseButton": "すべての壁紙を見る"
+    "browseButton": "すべての壁紙を見る",
+    "search": "カテゴリを検索...",
+    "noResults": "カテゴリが見つかりません"
   },
   "preview": {
     "discover": "バイブを探索",
+    "noResults": "壁紙が見つかりません",
     "filters": {
       "All": "すべて",
       "Minimal": "ミニマリスティック",
@@ -55,7 +58,8 @@
     "interactiveMissing": "インタラクティブ壁紙のデータがありません。",
     "interactiveApplied": "ライブ壁紙の準備ができました！ピッカーから選択してください。",
     "tryAgain": "再試行",
-    "quickApply": "長押しでクイック適用"
+    "quickApply": "長押しでクイック適用",
+    "swipeUpHint": "上にスワイプして詳細を表示"
   },
   "bottomSheet": {
     "title": "壁紙を設定",

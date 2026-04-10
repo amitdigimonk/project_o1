@@ -1,5 +1,4 @@
 import CategoryCard from '@/components/CategoryCard';
-import CustomButton from '@/components/CustomButton';
 import CustomText from '@/components/CustomText';
 import { CategoryGridSkeleton } from '@/components/SkeletonPlaceholder';
 import { commonStyles } from '@/constants/commonStyles';
@@ -8,10 +7,113 @@ import { fetchHomeCategories, getCachedCategories } from '@/services/categorySer
 import { Category } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
 import { Redirect, useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View, ActivityIndicator } from 'react-native';
+import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import Animated, { Easing, interpolateColor, useAnimatedProps, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withSpring, withTiming } from 'react-native-reanimated';
+import Svg, { Circle, Ellipse, Path } from 'react-native-svg';
+
+const AnimatedEllipse = Animated.createAnimatedComponent(Ellipse);
+const AnimatedPath = Animated.createAnimatedComponent(Path);
 import { useSettings } from '@/context/SettingsContext';
+
+const BODY_COLORS   = ['#4CAF50', '#14B8A6', '#F97316', '#EC4899', '#3B82F6', '#4CAF50'];
+const BELLY_COLORS  = ['#81C784', '#4DB6AC', '#FFB74D', '#F48FB1', '#90CAF9', '#81C784'];
+const DETAIL_COLORS = ['#2E7D32', '#00695C', '#E65100', '#880E4F', '#1565C0', '#2E7D32'];
+const COLOR_STOPS   = [0, 0.2, 0.4, 0.6, 0.8, 1];
+
+const ChameleonHanger = React.memo(() => {
+  const jumpY = useSharedValue(-160);
+  const sway = useSharedValue(0);
+  const colorP = useSharedValue(0);
+
+  useEffect(() => {
+    colorP.value = withRepeat(
+      withTiming(1, { duration: 3000, easing: Easing.inOut(Easing.sin) }),
+      -1,
+      true
+    );
+    jumpY.value = withSpring(0, { damping: 13, stiffness: 85, mass: 1.1 }, () => {
+      sway.value = withRepeat(
+        withSequence(
+          withTiming(3, { duration: 1600, easing: Easing.inOut(Easing.sin) }),
+          withTiming(-3, { duration: 1600, easing: Easing.inOut(Easing.sin) }),
+        ),
+        -1,
+        false
+      );
+    });
+  }, []);
+
+  const style = useAnimatedStyle(() => ({
+    transform: [
+      { translateY: jumpY.value },
+      { rotate: `${sway.value}deg` },
+    ],
+  }));
+
+  const bodyProps   = useAnimatedProps(() => ({ fill: interpolateColor(colorP.value, COLOR_STOPS, BODY_COLORS) }));
+  const bellyProps  = useAnimatedProps(() => ({ fill: interpolateColor(colorP.value, COLOR_STOPS, BELLY_COLORS) }));
+  const detailProps = useAnimatedProps(() => ({ stroke: interpolateColor(colorP.value, COLOR_STOPS, DETAIL_COLORS) }));
+  const fillDetailProps = useAnimatedProps(() => ({ fill: interpolateColor(colorP.value, COLOR_STOPS, DETAIL_COLORS) }));
+
+  return (
+    <Animated.View style={[styles.chameleonWrap, style]}>
+      <Svg width={70} height={35} viewBox="0 0 115 58">
+        {/* Tail */}
+        <AnimatedPath
+          d="M22 24 Q8 34 10 48 Q14 58 26 54 Q34 50 30 42"
+          strokeWidth={6}
+          fill="none"
+          strokeLinecap="round"
+          animatedProps={detailProps}
+        />
+        {/* Body */}
+        <AnimatedEllipse cx="56" cy="20" rx="34" ry="15" animatedProps={bodyProps} />
+        {/* Belly */}
+        <AnimatedEllipse cx="56" cy="23" rx="24" ry="9" animatedProps={bellyProps} />
+        {/* Dorsal spikes */}
+        <AnimatedPath
+          d="M36 7 L34 0 M48 4 L46 -3 M60 3 L58 -4 M72 5 L70 -2"
+          strokeWidth={2.5}
+          fill="none"
+          strokeLinecap="round"
+          animatedProps={detailProps}
+        />
+        {/* Head */}
+        <AnimatedEllipse cx="91" cy="16" rx="19" ry="14" animatedProps={bodyProps} />
+        {/* Head crest */}
+        <AnimatedPath
+          d="M76 6 Q84 -1 93 5"
+          strokeWidth={3}
+          fill="none"
+          strokeLinecap="round"
+          animatedProps={detailProps}
+        />
+        {/* Eye */}
+        <Circle cx="98" cy="11" r="7" fill="white" />
+        <Circle cx="99" cy="11" r="3.5" fill="#1a1a1a" />
+        <Circle cx="98" cy="10" r="1.2" fill="white" />
+        {/* Nostril */}
+        <AnimatedPath
+          d="M107 16 Q108 17 109 16"
+          strokeWidth={2}
+          fill="none"
+          strokeLinecap="round"
+          animatedProps={detailProps}
+        />
+        {/* Tongue */}
+        <Path d="M110 20 Q118 24 116 28 Q114 32 112 28" stroke="#E53935" strokeWidth={2.5} fill="none" strokeLinecap="round" />
+        {/* Front legs */}
+        <AnimatedPath d="M74 32 L72 52 M68 52 L72 52 L76 50" strokeWidth={3.5} fill="none" strokeLinecap="round" animatedProps={detailProps} />
+        {/* Mid legs */}
+        <AnimatedPath d="M54 33 L52 53 M48 53 L52 53 L56 51" strokeWidth={3.5} fill="none" strokeLinecap="round" animatedProps={detailProps} />
+        {/* Back legs */}
+        <AnimatedPath d="M34 30 L32 50 M28 50 L32 50 L36 48" strokeWidth={3.5} fill="none" strokeLinecap="round" animatedProps={detailProps} />
+      </Svg>
+    </Animated.View>
+  );
+});
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -25,15 +127,11 @@ export default function HomeScreen() {
   const loadCategories = useCallback(async (showSkeleton = true) => {
     try {
       if (showSkeleton) setIsLoading(true);
-
-      // 1. Load from cache first
       const cached = await getCachedCategories();
       if (cached && cached.length > 0) {
         setCategories(cached);
         if (showSkeleton) setIsLoading(false);
       }
-
-      // 2. Fetch fresh data
       const data = await fetchHomeCategories(i18n.language || 'en');
       setCategories(data);
     } catch (error) {
@@ -54,7 +152,6 @@ export default function HomeScreen() {
   }, [loadCategories]);
 
   const handleCategoryPress = (category: Category) => {
-
     router.push({
       pathname: '/preview',
       params: {
@@ -92,15 +189,18 @@ export default function HomeScreen() {
     >
       <View style={styles.header}>
         <View style={styles.headerTitleContainer}>
-          <CustomText variant="caption">{t('home.caption')}</CustomText>
-          <CustomText variant="heading">{t('home.heading')}</CustomText>
+          <View style={styles.captionRow}>
+            <ChameleonHanger />
+            <CustomText variant="caption" color={colors.primary}>{t('home.caption')}</CustomText>
+          </View>
+          <CustomText variant="heading" style={{ fontSize: 26, fontWeight: '600' }}>{t('home.heading')}</CustomText>
         </View>
         <TouchableOpacity
-          style={[styles.settingsButton, { backgroundColor: colors.card }]}
+          style={styles.settingsButton}
           onPress={() => router.push('/settings')}
-          activeOpacity={0.7}
+          activeOpacity={0.5}
         >
-          <Ionicons name="settings-outline" size={24} color={colors.text} />
+          <Ionicons name="settings-outline" size={22} color={colors.textMuted} />
         </TouchableOpacity>
       </View>
 
@@ -113,23 +213,21 @@ export default function HomeScreen() {
               key={item.id}
               category={item}
               index={index}
+              isHero={index === 0}
               onPress={handleCategoryPress}
             />
           ))
         )}
       </View>
 
-      {/* 3. Bold Primary Action */}
-      <View style={styles.actionContainer}>
-        <CustomText variant="body" style={{ color: colors.textMuted, textAlign: 'center' }}>
-          {t('home.subtext')}
-        </CustomText>
-        <CustomButton
-          title={t('home.browseButton')}
-          onPress={() => router.push({ pathname: '/preview', params: { category: 'All' } })}
-        />
-      </View>
-
+      <TouchableOpacity
+        style={[styles.browseRow, { borderTopColor: colors.border }]}
+        onPress={() => router.push({ pathname: '/preview', params: { category: 'All' } })}
+        activeOpacity={0.5}
+      >
+        <CustomText variant="body" style={{ color: colors.text }}>{t('home.browseButton')}</CustomText>
+        <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+      </TouchableOpacity>
     </ScrollView>
   );
 }
@@ -149,17 +247,18 @@ const styles = StyleSheet.create({
   headerTitleContainer: {
     flex: 1,
   },
+  captionRow: {
+    position: 'relative',
+    marginBottom: 2,
+  },
+  chameleonWrap: {
+    position: 'absolute',
+    top: -30,
+    left: -6,
+    zIndex: 10,
+  },
   settingsButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 2,
+    padding: 4,
   },
   grid: {
     paddingHorizontal: 20,
@@ -167,16 +266,13 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     justifyContent: 'space-between',
   },
-  loadingContainer: {
-    flex: 1,
-    height: 300,
-    justifyContent: 'center',
+  browseRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-  },
-  actionContainer: {
-    paddingHorizontal: 24,
-    marginTop: 30,
-    alignItems: 'center',
-    gap: 10,
+    gap: 4,
+    marginHorizontal: 20,
+    marginTop: 8,
+    paddingVertical: 16,
+    borderTopWidth: StyleSheet.hairlineWidth,
   },
 });

@@ -3,8 +3,9 @@ import { Wallpaper } from '@/types';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
+import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
-import { Platform, StyleSheet, TouchableOpacity } from 'react-native';
+import { Platform, StyleSheet, TouchableOpacity, View } from 'react-native';
 
 interface WallpaperCardProps {
     item: Wallpaper;
@@ -15,8 +16,6 @@ interface WallpaperCardProps {
 }
 
 const WALLPAPER_DIR = `${FileSystem.documentDirectory || ''}wallpaper/`;
-const INDEX_HTML_PATH = `${WALLPAPER_DIR}index.html`;
-const THREE_JS_PATH = `${WALLPAPER_DIR}three.min.js`;
 
 const WallpaperCard = React.memo(({ item, index, colors, onPress, onLongPress }: WallpaperCardProps) => {
 
@@ -101,6 +100,8 @@ const WallpaperCard = React.memo(({ item, index, colors, onPress, onLongPress }:
         onLongPress?.();
     };
 
+    const isInteractive = item.type === 'interactive';
+
     return (
         <TouchableOpacity
             activeOpacity={0.9}
@@ -111,12 +112,17 @@ const WallpaperCard = React.memo(({ item, index, colors, onPress, onLongPress }:
         >
             <Image
                 source={{ uri: item.url }}
-                style={[styles.image, { height: 260, backgroundColor: colors.border }]}
+                style={[styles.image, { height: index % 2 === 0 ? 260 : 200, backgroundColor: colors.border }]}
                 contentFit="cover"
                 transition={300}
                 cachePolicy="disk"
                 placeholder="L6PZf-ayfRyE00ayj[fQ~qj[fQj["
             />
+            {isInteractive && (
+                <View style={styles.badge}>
+                    <Ionicons name="sparkles" size={10} color="#FFFFFF" />
+                </View>
+            )}
         </TouchableOpacity>
     );
 });
@@ -130,6 +136,17 @@ const styles = StyleSheet.create({
     },
     image: {
         width: '100%',
+    },
+    badge: {
+        position: 'absolute',
+        top: 8,
+        right: 8,
+        backgroundColor: 'rgba(0,0,0,0.55)',
+        borderRadius: 20,
+        width: 24,
+        height: 24,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
 });
 
