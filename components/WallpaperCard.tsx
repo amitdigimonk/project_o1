@@ -11,8 +11,8 @@ interface WallpaperCardProps {
     item: Wallpaper;
     index: number;
     colors: any;
-    onPress: () => void;
-    onLongPress?: () => void;
+    onPress: (index: number) => void;
+    onLongPress?: (item: Wallpaper) => void;
 }
 
 const WALLPAPER_DIR = `${FileSystem.documentDirectory || ''}wallpaper/`;
@@ -92,12 +92,12 @@ const WallpaperCard = React.memo(({ item, index, colors, onPress, onLongPress }:
         }
 
         // Default behavior: Open standard preview for 2D images
-        onPress();
+        onPress(index);
     };
 
     const handleLongPress = () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        onLongPress?.();
+        onLongPress?.(item);
     };
 
     const isInteractive = item.type === 'interactive';

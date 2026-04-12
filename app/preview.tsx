@@ -12,7 +12,7 @@ import WallpaperCard from '@/components/WallpaperCard';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import React, { useState, useCallback, useEffect } from 'react';
-import { ActivityIndicator, FlatList, RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View, Platform } from 'react-native';
+import { ActivityIndicator, FlatList, RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View, Platform, InteractionManager } from 'react-native';
 import { fetchHomeCategories, getCachedCategories } from '@/services/categoryService';
 import { fetchWallpapersByCategory, getCachedWallpapers } from '@/services/wallpaperService';
 import { Category, Wallpaper } from '@/types';
@@ -160,9 +160,12 @@ export default function PreviewScreen() {
     }, [selectedCategoryId]);
 
     useEffect(() => {
-        setPage(1);
-        setHasMore(true);
-        loadWallpapers(true, 1);
+        const task = InteractionManager.runAfterInteractions(() => {
+            setPage(1);
+            setHasMore(true);
+            loadWallpapers(true, 1);
+        });
+        return () => task.cancel();
     }, [loadWallpapers]);
 
     const onRefresh = useCallback(() => {
@@ -212,10 +215,19 @@ export default function PreviewScreen() {
             item={item}
             index={index}
             colors={colors}
-            onPress={() => handleImagePress(index)}
-            onLongPress={() => handleLongPress(item)}
+            onPress={handleImagePress}
+            onLongPress={handleLongPress}
         />
     ), [colors, handleImagePress, handleLongPress]);
+
+    const getItemLayout = useCallback((_: any, index: number) => {
+        const rowHeight = 272; // 260 (max image height) + 12 (vertical margins)
+        return {
+            length: rowHeight,
+            offset: rowHeight * Math.floor(index / 2),
+            index,
+        };
+    }, []);
 
     return (
         <View style={[commonStyles.screenContainer, { backgroundColor: colors.background }]}>
@@ -261,7 +273,7 @@ export default function PreviewScreen() {
                                 key={cat.id}
                                 style={styles.filterItem}
                                 onPress={() => {
-                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                    // Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); // Removed per user request
                                     setSelectedCategoryId(cat.id);
                                 }}
                             >
@@ -305,10 +317,12 @@ export default function PreviewScreen() {
                         showsVerticalScrollIndicator={false}
                         removeClippedSubviews={Platform.OS === 'android'}
                         initialNumToRender={6}
-                        maxToRenderPerBatch={10}
-                        windowSize={10}
+                        windowSize={5}
+                        maxToRenderPerBatch={8}
+                        updateCellsBatchingPeriod={50}
                         onEndReached={loadMore}
                         onEndReachedThreshold={0.5}
+                        getItemLayout={getItemLayout}
                         refreshControl={
                             <RefreshControl
                                 refreshing={isRefreshing}

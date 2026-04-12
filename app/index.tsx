@@ -2,6 +2,7 @@ import CategoryCard from '@/components/CategoryCard';
 import CustomText from '@/components/CustomText';
 import { CategoryGridSkeleton } from '@/components/SkeletonPlaceholder';
 import { commonStyles } from '@/constants/commonStyles';
+import { useSettings } from '@/context/SettingsContext';
 import { useTheme } from '@/hooks/useTheme';
 import { fetchHomeCategories, getCachedCategories } from '@/services/categoryService';
 import { Category } from '@/types';
@@ -9,18 +10,17 @@ import { Ionicons } from '@expo/vector-icons';
 import { Redirect, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, InteractionManager, RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import Animated, { Easing, interpolateColor, useAnimatedProps, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withSpring, withTiming } from 'react-native-reanimated';
 import Svg, { Circle, Ellipse, Path } from 'react-native-svg';
 
 const AnimatedEllipse = Animated.createAnimatedComponent(Ellipse);
 const AnimatedPath = Animated.createAnimatedComponent(Path);
-import { useSettings } from '@/context/SettingsContext';
 
-const BODY_COLORS   = ['#4CAF50', '#14B8A6', '#F97316', '#EC4899', '#3B82F6', '#4CAF50'];
-const BELLY_COLORS  = ['#81C784', '#4DB6AC', '#FFB74D', '#F48FB1', '#90CAF9', '#81C784'];
+const BODY_COLORS = ['#4CAF50', '#14B8A6', '#F97316', '#EC4899', '#3B82F6', '#4CAF50'];
+const BELLY_COLORS = ['#81C784', '#4DB6AC', '#FFB74D', '#F48FB1', '#90CAF9', '#81C784'];
 const DETAIL_COLORS = ['#2E7D32', '#00695C', '#E65100', '#880E4F', '#1565C0', '#2E7D32'];
-const COLOR_STOPS   = [0, 0.2, 0.4, 0.6, 0.8, 1];
+const COLOR_STOPS = [0, 0.2, 0.4, 0.6, 0.8, 1];
 
 const ChameleonHanger = React.memo(() => {
   const jumpY = useSharedValue(-160);
@@ -29,9 +29,9 @@ const ChameleonHanger = React.memo(() => {
 
   useEffect(() => {
     colorP.value = withRepeat(
-      withTiming(1, { duration: 3000, easing: Easing.inOut(Easing.sin) }),
+      withTiming(1, { duration: 12000, easing: Easing.linear }),
       -1,
-      true
+      false
     );
     jumpY.value = withSpring(0, { damping: 13, stiffness: 85, mass: 1.1 }, () => {
       sway.value = withRepeat(
@@ -52,10 +52,9 @@ const ChameleonHanger = React.memo(() => {
     ],
   }));
 
-  const bodyProps   = useAnimatedProps(() => ({ fill: interpolateColor(colorP.value, COLOR_STOPS, BODY_COLORS) }));
-  const bellyProps  = useAnimatedProps(() => ({ fill: interpolateColor(colorP.value, COLOR_STOPS, BELLY_COLORS) }));
+  const bodyProps = useAnimatedProps(() => ({ fill: interpolateColor(colorP.value, COLOR_STOPS, BODY_COLORS) }));
+  const bellyProps = useAnimatedProps(() => ({ fill: interpolateColor(colorP.value, COLOR_STOPS, BELLY_COLORS) }));
   const detailProps = useAnimatedProps(() => ({ stroke: interpolateColor(colorP.value, COLOR_STOPS, DETAIL_COLORS) }));
-  const fillDetailProps = useAnimatedProps(() => ({ fill: interpolateColor(colorP.value, COLOR_STOPS, DETAIL_COLORS) }));
 
   return (
     <Animated.View style={[styles.chameleonWrap, style]}>
@@ -142,16 +141,33 @@ export default function HomeScreen() {
     }
   }, [i18n.language]);
 
+  const arrowX = useSharedValue(0);
+
   useEffect(() => {
-    loadCategories();
+    const task = InteractionManager.runAfterInteractions(() => {
+      loadCategories();
+    });
+    return () => task.cancel();
   }, [loadCategories]);
+
+  useEffect(() => {
+    arrowX.value = withRepeat(
+      withTiming(4, { duration: 1000, easing: Easing.inOut(Easing.sin) }),
+      -1,
+      true
+    );
+  }, []);
+
+  const arrowAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: arrowX.value }],
+  }));
 
   const onRefresh = useCallback(() => {
     setIsRefreshing(true);
     loadCategories(false);
   }, [loadCategories]);
 
-  const handleCategoryPress = (category: Category) => {
+  const handleCategoryPress = useCallback((category: Category) => {
     router.push({
       pathname: '/preview',
       params: {
@@ -159,7 +175,7 @@ export default function HomeScreen() {
         categoryId: category.id
       }
     });
-  };
+  }, [router]);
 
   if (isLoadingSettings) {
     return (
@@ -223,7 +239,7 @@ export default function HomeScreen() {
       <TouchableOpacity
         style={[styles.browseRow, { borderTopColor: colors.border }]}
         onPress={() => router.push({ pathname: '/preview', params: { category: 'All' } })}
-        activeOpacity={0.5}
+        activeOpacity={0.6}
       >
         <CustomText variant="body" style={{ color: colors.text }}>{t('home.browseButton')}</CustomText>
         <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
