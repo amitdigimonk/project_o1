@@ -1,21 +1,21 @@
 import CustomText from '@/components/CustomText';
 import { WallpaperGridSkeleton } from '@/components/SkeletonPlaceholder';
+import { useToast } from '@/components/Toast';
 import WallpaperBottomSheet from '@/components/WallpaperBottomSheet';
 import { commonStyles } from '@/constants/commonStyles';
 import { useTheme } from '@/hooks/useTheme';
 import { androidWallpaperEngine } from '@/services/androidWallpaperEngine';
-import { useToast } from '@/components/Toast';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
 import WallpaperCard from '@/components/WallpaperCard';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useTranslation } from 'react-i18next';
-import React, { useState, useCallback, useEffect } from 'react';
-import { ActivityIndicator, FlatList, RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View, Platform, InteractionManager } from 'react-native';
 import { fetchHomeCategories, getCachedCategories } from '@/services/categoryService';
 import { fetchWallpapersByCategory, getCachedWallpapers } from '@/services/wallpaperService';
 import { Category, Wallpaper } from '@/types';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { ActivityIndicator, FlatList, InteractionManager, Platform, RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 
 // Dynamic filters replace static ones
 
@@ -130,8 +130,8 @@ export default function PreviewScreen() {
             }
 
             const data = await fetchWallpapersByCategory(
-                selectedCategoryId, 
-                pageNum, 
+                selectedCategoryId,
+                pageNum,
                 PAGE_SIZE,
             );
 
@@ -160,12 +160,18 @@ export default function PreviewScreen() {
     }, [selectedCategoryId]);
 
     useEffect(() => {
-        const task = InteractionManager.runAfterInteractions(() => {
+        if (Platform.OS === 'web') {
             setPage(1);
             setHasMore(true);
             loadWallpapers(true, 1);
-        });
-        return () => task.cancel();
+        } else {
+            const task = InteractionManager.runAfterInteractions(() => {
+                setPage(1);
+                setHasMore(true);
+                loadWallpapers(true, 1);
+            });
+            return () => task.cancel();
+        }
     }, [loadWallpapers]);
 
     const onRefresh = useCallback(() => {
@@ -182,12 +188,12 @@ export default function PreviewScreen() {
     }, [isLoadingMore, hasMore, isLoading, page, loadWallpapers]);
 
     const handleImagePress = useCallback((index: number) => {
-        router.push({ 
-            pathname: '/image-viewer', 
-            params: { 
+        router.push({
+            pathname: '/image-viewer',
+            params: {
                 initialIndex: index.toString(),
                 categoryId: selectedCategoryId || 'All'
-            } 
+            }
         });
     }, [router, selectedCategoryId]);
 

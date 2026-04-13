@@ -10,7 +10,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Redirect, useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, InteractionManager, Platform, RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import Animated, { cancelAnimation, Easing, interpolateColor, useAnimatedProps, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withSpring, withTiming } from 'react-native-reanimated';
 import Svg, { Circle, Ellipse, Path } from 'react-native-svg';
 
@@ -152,10 +152,14 @@ export default function HomeScreen() {
   const arrowX = useSharedValue(0);
 
   useEffect(() => {
-    const task = InteractionManager.runAfterInteractions(() => {
+    if (Platform.OS === 'web') {
       loadCategories();
-    });
-    return () => task.cancel();
+    } else {
+      const task = InteractionManager.runAfterInteractions(() => {
+        loadCategories();
+      });
+      return () => task.cancel();
+    }
   }, [loadCategories]);
 
   useEffect(() => {
