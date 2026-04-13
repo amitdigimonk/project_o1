@@ -10,7 +10,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Redirect, useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, InteractionManager, Platform, RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Image, InteractionManager, Platform, RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import Animated, { cancelAnimation, Easing, interpolateColor, useAnimatedProps, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withSpring, withTiming } from 'react-native-reanimated';
 import Svg, { Circle, Ellipse, Path } from 'react-native-svg';
 
@@ -217,6 +217,11 @@ export default function HomeScreen() {
     >
       <View style={styles.header}>
         <View style={styles.headerTitleContainer}>
+          <Image
+            source={require('@/assets/images/logo.png')}
+            style={styles.logo}
+            resizeMode="contain"
+          />
           <View style={styles.captionRow}>
             <ChameleonHanger />
             <CustomText variant="caption" color={colors.primary}>{t('home.caption')}</CustomText>
@@ -274,6 +279,10 @@ const styles = StyleSheet.create({
   },
   headerTitleContainer: {
     flex: 1,
+  },
+  logo: {
+    height: 40,
+    marginBottom: 16,
   },
   captionRow: {
     position: 'relative',
