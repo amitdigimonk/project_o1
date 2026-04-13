@@ -1,27 +1,26 @@
 import CustomText from '@/components/CustomText';
 import { commonStyles } from '@/constants/commonStyles';
 import { useTheme } from '@/hooks/useTheme';
-import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import React, { useState, useMemo, useCallback } from 'react';
-import { ScrollView, StyleSheet, TouchableOpacity, View, Modal, FlatList, Linking, Alert } from 'react-native';
-import { useTranslation } from 'react-i18next';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CATEGORIES } from '@/services/mockData';
-import { ActivityIndicator } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import Constants from 'expo-constants';
 import * as Device from 'expo-device';
 import * as Haptics from 'expo-haptics';
-import Constants from 'expo-constants';
+import { useRouter } from 'expo-router';
+import React, { useCallback, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { ActivityIndicator, Alert, FlatList, Linking, Modal, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 
 export default function SettingsScreen() {
     const router = useRouter();
     const { t, i18n: i18nInstance } = useTranslation();
-    
-    const { 
+
+    const {
         colors,
-        themeMode, 
-        setThemeMode, 
-        notificationsEnabled, 
+        themeMode,
+        setThemeMode,
+        notificationsEnabled,
         setNotificationsEnabled,
         lockScreenCategories,
         toggleLockScreenCategory,
@@ -42,9 +41,9 @@ export default function SettingsScreen() {
     ], []);
 
     const currentLanguage = i18nInstance?.language?.split('-')[0] || 'en';
-    const currentLanguageLabel = useMemo(() => 
+    const currentLanguageLabel = useMemo(() =>
         languages.find(l => l.code === currentLanguage)?.label || 'English'
-    , [languages, currentLanguage]);
+        , [languages, currentLanguage]);
 
     const changeLanguage = useCallback(async (code: string) => {
         if (i18nInstance?.changeLanguage) {
@@ -146,29 +145,29 @@ export default function SettingsScreen() {
                 </TouchableOpacity>
                 <CustomText style={[styles.headerTitle, { color: colors.text }]}>{t('settings.title')}</CustomText>
             </View>
- 
+
             <ScrollView contentContainerStyle={styles.scrollContent}>
                 <View style={styles.section}>
                     <CustomText variant="caption" style={styles.sectionTitle}>{t('settings.features')}</CustomText>
-                    <SettingItem 
-                        icon="image-outline" 
-                        label={t('settings.lockScreenPack')} 
+                    <SettingItem
+                        icon="image-outline"
+                        label={t('settings.lockScreenPack')}
                         value={lockScreenCategories.length > 0 ? `${lockScreenCategories.length}/5` : ''}
                         onPress={() => setFeatureModalVisible(true)}
                     />
-                    <SettingItem 
-                        icon={eventsEnabled ? "calendar" : "calendar-outline"} 
-                        label={t('settings.events')} 
-                        value={eventsEnabled ? t('settings.enabled') : t('settings.disabled')} 
+                    <SettingItem
+                        icon={eventsEnabled ? "calendar" : "calendar-outline"}
+                        label={t('settings.events')}
+                        value={eventsEnabled ? t('settings.enabled') : t('settings.disabled')}
                         onPress={() => setEventsEnabled(!eventsEnabled)}
                     />
                 </View>
 
                 <View style={styles.section}>
                     <CustomText variant="caption" style={styles.sectionTitle}>{t('settings.preferences')}</CustomText>
-                    <SettingItem 
-                        icon={themeMode === 'dark' ? 'moon' : themeMode === 'light' ? 'sunny-outline' : 'settings-outline'} 
-                        label={t('settings.themeMode')} 
+                    <SettingItem
+                        icon={themeMode === 'dark' ? 'moon' : themeMode === 'light' ? 'sunny-outline' : 'settings-outline'}
+                        label={t('settings.themeMode')}
                         value={t(`settings.${themeMode}`)}
                         onPress={() => {
                             const modes: ('light' | 'dark' | 'system')[] = ['light', 'dark', 'system'];
@@ -176,18 +175,18 @@ export default function SettingsScreen() {
                             setThemeMode(modes[nextIndex]);
                         }}
                     />
-                    <SettingItem 
-                        icon={notificationsEnabled ? "notifications" : "notifications-off-outline"} 
-                        label={t('settings.notifications')} 
-                        value={notificationsEnabled ? t('settings.enabled') : t('settings.disabled')} 
+                    <SettingItem
+                        icon={notificationsEnabled ? "notifications" : "notifications-off-outline"}
+                        label={t('settings.notifications')}
+                        value={notificationsEnabled ? t('settings.enabled') : t('settings.disabled')}
                         onPress={() => {
                             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                             setNotificationsEnabled(!notificationsEnabled);
                         }}
                     />
-                    <SettingItem 
-                        icon="language-outline" 
-                        label={t('settings.language')} 
+                    <SettingItem
+                        icon="language-outline"
+                        label={t('settings.language')}
                         value={currentLanguageLabel}
                         onPress={() => setLanguageModalVisible(true)}
                     />
@@ -195,19 +194,19 @@ export default function SettingsScreen() {
 
                 <View style={styles.section}>
                     <CustomText variant="caption" style={styles.sectionTitle}>{t('settings.reportFeedback')}</CustomText>
-                    <SettingItem 
-                        icon="bug-outline" 
-                        label={t('settings.reportBug')} 
+                    <SettingItem
+                        icon="bug-outline"
+                        label={t('settings.reportBug')}
                         onPress={handleReportBug}
                     />
-                    <SettingItem 
-                        icon="bulb-outline" 
-                        label={t('settings.suggestFeature')} 
+                    <SettingItem
+                        icon="bulb-outline"
+                        label={t('settings.suggestFeature')}
                         onPress={handleSuggestFeature}
                     />
-                    <SettingItem 
-                        icon="help-circle-outline" 
-                        label={t('settings.faq')} 
+                    <SettingItem
+                        icon="help-circle-outline"
+                        label={t('settings.faq')}
                         onPress={handleFAQ}
                     />
                 </View>
@@ -219,11 +218,11 @@ export default function SettingsScreen() {
                     <SettingItem icon="mail-outline" label={t('settings.contactSupport')} />
                 </View>
 
-                <View style={[styles.footer, { marginTop: 40 }]}>
+                {/* <View style={[styles.footer, { marginTop: 40 }]}>
                     <CustomText variant="caption" style={{ textAlign: 'center', opacity: 0.5 }}>
                         {t('settings.madeWithVibe')}
                     </CustomText>
-                </View>
+                </View> */}
             </ScrollView>
 
             <Modal
@@ -232,9 +231,9 @@ export default function SettingsScreen() {
                 animationType="fade"
                 onRequestClose={() => setLanguageModalVisible(false)}
             >
-                <TouchableOpacity 
-                    style={styles.modalOverlay} 
-                    activeOpacity={1} 
+                <TouchableOpacity
+                    style={styles.modalOverlay}
+                    activeOpacity={1}
                     onPress={() => setLanguageModalVisible(false)}
                 >
                     <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
@@ -243,8 +242,8 @@ export default function SettingsScreen() {
                             data={languages}
                             keyExtractor={(item) => item.code}
                             renderItem={({ item }) => (
-                                <TouchableOpacity 
-                                    style={styles.languageOption} 
+                                <TouchableOpacity
+                                    style={styles.languageOption}
                                     onPress={() => changeLanguage(item.code)}
                                 >
                                     <CustomText variant="body" style={{ color: i18nInstance.language === item.code ? colors.primary : colors.text }}>
@@ -266,9 +265,9 @@ export default function SettingsScreen() {
                 animationType="slide"
                 onRequestClose={() => setFeatureModalVisible(false)}
             >
-                <TouchableOpacity 
-                    style={styles.modalOverlay} 
-                    activeOpacity={1} 
+                <TouchableOpacity
+                    style={styles.modalOverlay}
+                    activeOpacity={1}
                     onPress={() => !isDownloading && setFeatureModalVisible(false)}
                 >
                     <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
@@ -276,15 +275,15 @@ export default function SettingsScreen() {
                         <CustomText variant="caption" style={{ textAlign: 'center', marginBottom: 20 }}>
                             {t('settings.maxSelection')}
                         </CustomText>
-                        
+
                         <FlatList
                             data={CATEGORIES}
                             keyExtractor={(item) => item.id}
                             renderItem={({ item }) => {
                                 const isSelected = lockScreenCategories.includes(item.id);
                                 return (
-                                    <TouchableOpacity 
-                                        style={styles.languageOption} 
+                                    <TouchableOpacity
+                                        style={styles.languageOption}
                                         onPress={() => toggleLockScreenCategory(item.id)}
                                         disabled={isDownloading}
                                     >
@@ -301,8 +300,8 @@ export default function SettingsScreen() {
 
                         <TouchableOpacity
                             style={[
-                                styles.downloadButton, 
-                                { 
+                                styles.downloadButton,
+                                {
                                     backgroundColor: colors.primary,
                                     opacity: lockScreenCategories.length === 0 || isDownloading ? 0.6 : 1
                                 }

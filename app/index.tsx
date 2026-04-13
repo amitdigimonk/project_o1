@@ -7,11 +7,11 @@ import { useTheme } from '@/hooks/useTheme';
 import { fetchHomeCategories, getCachedCategories } from '@/services/categoryService';
 import { Category } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
-import { Redirect, useRouter } from 'expo-router';
+import { Redirect, useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, InteractionManager, RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
-import Animated, { Easing, interpolateColor, useAnimatedProps, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withSpring, withTiming } from 'react-native-reanimated';
+import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import Animated, { cancelAnimation, Easing, interpolateColor, useAnimatedProps, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withSpring, withTiming } from 'react-native-reanimated';
 import Svg, { Circle, Ellipse, Path } from 'react-native-svg';
 
 const AnimatedEllipse = Animated.createAnimatedComponent(Ellipse);
@@ -27,23 +27,31 @@ const ChameleonHanger = React.memo(() => {
   const sway = useSharedValue(0);
   const colorP = useSharedValue(0);
 
-  useEffect(() => {
-    colorP.value = withRepeat(
-      withTiming(1, { duration: 12000, easing: Easing.linear }),
-      -1,
-      false
-    );
-    jumpY.value = withSpring(0, { damping: 13, stiffness: 85, mass: 1.1 }, () => {
-      sway.value = withRepeat(
-        withSequence(
-          withTiming(3, { duration: 1600, easing: Easing.inOut(Easing.sin) }),
-          withTiming(-3, { duration: 1600, easing: Easing.inOut(Easing.sin) }),
-        ),
+  useFocusEffect(
+    useCallback(() => {
+      colorP.value = withRepeat(
+        withTiming(1, { duration: 3000, easing: Easing.inOut(Easing.sin) }),
         -1,
-        false
+        true
       );
-    });
-  }, []);
+      jumpY.value = withSpring(0, { damping: 13, stiffness: 85, mass: 1.1 }, () => {
+        sway.value = withRepeat(
+          withSequence(
+            withTiming(3, { duration: 1600, easing: Easing.inOut(Easing.sin) }),
+            withTiming(-3, { duration: 1600, easing: Easing.inOut(Easing.sin) }),
+          ),
+          -1,
+          false
+        );
+      });
+
+      return () => {
+        cancelAnimation(colorP);
+        cancelAnimation(jumpY);
+        cancelAnimation(sway);
+      };
+    }, [])
+  );
 
   const style = useAnimatedStyle(() => ({
     transform: [

@@ -1,5 +1,4 @@
 import { Category } from '@/types';
-import { BlurView } from 'expo-blur';
 import { Image } from 'expo-image';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import React from 'react';
@@ -57,7 +56,7 @@ const CategoryCard: React.FC<CategoryCardProps> = React.memo(({ category, index 
           />
         )}
         <View style={styles.overlay} />
-        <BlurView intensity={28} tint="dark" style={styles.cardContent}>
+        <View style={[styles.cardContent, styles.cardContentBg]}>
           <CustomText style={[styles.cardName, isHero && styles.heroName]} color="#FFFFFF">
             {typeof category.name === 'string' ? category.name : t(`categories.${category.title}`)}
           </CustomText>
@@ -66,7 +65,7 @@ const CategoryCard: React.FC<CategoryCardProps> = React.memo(({ category, index 
               {category.count}
             </CustomText>
           ) : null}
-        </BlurView>
+        </View>
       </TouchableOpacity>
     </Animated.View>
   );
@@ -105,6 +104,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 12,
     gap: 2,
+  },
+  cardContentBg: {
+    backgroundColor: 'rgba(0,0,0,0.55)',
   },
   cardName: {
     fontSize: 15,
