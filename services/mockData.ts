@@ -2971,6 +2971,816 @@ export const BIRDS_3D_CODE = `<!DOCTYPE html>
 </body>
 </html>`;
 
+// export const GHIBLI_LANDSCAPE_CODE = `<!DOCTYPE html>
+// <html lang="en">
+// <head>
+//   <meta charset="UTF-8">
+//   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+//   <style>
+//     body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #64b5f6; touch-action: none; }
+//     canvas { display: block; position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; }
+//     #overlay { 
+//       position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 2; 
+//       opacity: 0.1; 
+//       background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3F%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.6' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23f)'/%3E%3C/svg%3E"); 
+//     }
+//   </style>
+// </head>
+// <body>
+//   <canvas id="canvas"></canvas>
+//   <div id="overlay"></div>
+
+//   <script>
+//     const canvas = document.getElementById('canvas');
+//     const ctx = canvas.getContext('2d', { alpha: false });
+//     let width, height, dpr;
+//     let isPlaying = true;
+//     let globalTime = 0;
+//     let lastDraw = performance.now();
+
+//     let mtns = [], grass = [], clouds = [];
+
+//     let flowers = [];
+//     let mist = [];
+
+//     function generateScene() {
+//       // Mountains
+//       mtns = [
+//         { y: 0.48, amp: 45, freq: 0.003, col: '#a2c2e8' },
+//         { y: 0.55, amp: 35, freq: 0.005, col: '#85b3e2' },
+//         { y: 0.62, amp: 30, freq: 0.007, col: '#629edb' },
+//         { y: 0.70, amp: 35, freq: 0.004, col: '#458bd4' }
+//       ];
+
+//       // Towering Ghibli Clouds (3-Layer logic)
+//       clouds = Array.from({length: 4}).map(() => {
+//         const rBase = 50 + Math.random() * 50;
+//         return {
+//           x: Math.random() * width,
+//           y: height * 0.1 + Math.random() * height * 0.3,
+//           sp: 0.015 + Math.random() * 0.03,
+//           puffs: Array.from({length: 15}).map(() => ({
+//             ox: (Math.random() - 0.5) * rBase * 2.2,
+//             oy: (Math.random() - 0.5) * rBase * 1.2,
+//             r: rBase * (0.5 + Math.random() * 0.8)
+//           }))
+//         };
+//       });
+
+//       // Ultra Dense Mist / Fog Patches (25 patches)
+//       mist = Array.from({length: 25}).map(() => ({
+//         x: Math.random() * width,
+//         y: height * 0.76 + Math.random() * height * 0.24,
+//         r: 150 + Math.random() * 200,
+//         sp: 8 + Math.random() * 15
+//       }));
+
+//       // 1200 Dense Grass Blades
+//       grass = Array.from({length: 1200}).map(() => ({
+//         x: Math.random() * (width + 60) - 30,
+//         y: height * 0.77 + Math.random() * height * 0.23,
+//         h: 20 + Math.random() * 38,
+//         w: 0.8 + Math.random() * 1.6,
+//         off: Math.random() * 10,
+//         col: ['#2e7d32', '#388e3c', '#1b5e20', '#689f38', '#e6ee9c'][Math.floor(Math.random()*5)]
+//       })).sort((a,b) => a.y - b.y);
+
+//       // Wildflowers
+//       flowers = Array.from({length: 50}).map(() => ({
+//         x: Math.random() * width,
+//         y: height * 0.82 + Math.random() * height * 0.18,
+//         r: 1.5 + Math.random() * 2,
+//         col: ['#fff', '#fbdf11', '#ff5252', '#ba68c8'][Math.floor(Math.random()*4)]
+//       }));
+//     }
+//     function resize() {
+//       width = window.innerWidth;
+//       height = window.innerHeight;
+//       dpr = window.devicePixelRatio || 1;
+//       canvas.width = width * dpr;
+//       canvas.height = height * dpr;
+//       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+//       generateScene();
+//     }
+
+//     function drawSunMoon() {
+//       const hours = new Date().getHours() + new Date().getMinutes()/60;
+//       const isDay = hours >= 6 && hours <= 18;
+//       const prog = isDay ? (hours - 6) / 12 : (hours < 6 ? (hours + 6) / 12 : (hours - 18) / 12);
+
+//       const x = (prog * (width + 100)) - 50;
+//       const y = height * 0.45 - Math.sin(prog * Math.PI) * (height * 0.3);
+
+//       ctx.save();
+//       ctx.translate(x, y);
+//       if (isDay) {
+//         const g = ctx.createRadialGradient(0,0,0, 0,0,30);
+//         g.addColorStop(0, '#fff'); g.addColorStop(0.4, '#fffde7'); g.addColorStop(1, 'rgba(255,255,255,0)');
+//         ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0,0,30,0,7); ctx.fill();
+//       } else {
+//         ctx.fillStyle = '#f8fafc'; ctx.beginPath(); ctx.arc(0,0,20,0,7); ctx.fill();
+//         ctx.globalCompositeOperation = 'destination-out';
+//         ctx.beginPath(); ctx.arc(10,-5,18,0,7); ctx.fill();
+//         ctx.globalCompositeOperation = 'source-over';
+//       }
+//       ctx.restore();
+//     }
+
+//     function drawSky() {
+//       const g = ctx.createLinearGradient(0, 0, 0, height * 0.7);
+//       const d = new Date();
+//       const hours = d.getHours() + d.getMinutes()/60;
+//       const colors = (hours >= 6 && hours <= 18) 
+//         ? ['#2196f3', '#90caf9', '#e3f2fd']
+//         : ['#0d1b2a', '#1b263b', '#415a77'];
+//       g.addColorStop(0, colors[0]); g.addColorStop(0.5, colors[1]); g.addColorStop(1, colors[2]);
+//       ctx.fillStyle = g;
+//       ctx.fillRect(0, 0, width, height);
+//     }
+
+//     function drawClouds(dt, start = 0, end = clouds.length) {
+//       clouds.slice(start, end).forEach(c => {
+//         c.x += c.sp * dt * 40;
+//         if (c.x > width + 250) c.x = -250;
+
+//         ctx.save();
+//         ctx.translate(c.x, c.y);
+
+//         // Pass 1: Shadow (Bottom Layer)
+//         ctx.fillStyle = 'rgba(180, 200, 220, 0.65)';
+//         c.puffs.forEach(p => {
+//           ctx.beginPath(); ctx.arc(p.ox, p.oy + 12, p.r, 0, 7); ctx.fill();
+//         });
+
+//         // Pass 2: Main Body (Middle Layer)
+//         ctx.fillStyle = 'rgba(250, 252, 255, 0.95)';
+//         c.puffs.forEach(p => {
+//           ctx.beginPath(); ctx.arc(p.ox, p.oy, p.r, 0, 7); ctx.fill();
+//         });
+
+//         // Pass 3: Highlight (Top Layer)
+//         ctx.fillStyle = '#ffffff';
+//         c.puffs.forEach(p => {
+//           ctx.beginPath(); ctx.arc(p.ox, p.oy - 8, p.r * 0.8, 0, 7); ctx.fill();
+//         });
+
+//         ctx.restore();
+//       });
+//     }
+
+//     function drawMountains() {
+//       mtns.forEach(m => {
+//         ctx.beginPath();
+//         ctx.moveTo(0, height);
+//         for (let x = 0; x <= width + 20; x += 15) {
+//           let y = height * m.y + Math.sin(x * m.freq) * m.amp;
+//           ctx.lineTo(x, y);
+//         }
+//         ctx.lineTo(width, height);
+//         const grad = ctx.createLinearGradient(0, height * m.y - m.amp, 0, height);
+//         grad.addColorStop(0, m.col);
+//         grad.addColorStop(1, '#bbdefb');
+//         ctx.fillStyle = grad;
+//         ctx.fill();
+//       });
+//     }
+
+//     function drawMeadow() {
+//       // 1. Multi-tone base
+//       const g = ctx.createLinearGradient(0, height * 0.75, 0, height);
+//       g.addColorStop(0, '#cddc39'); g.addColorStop(0.3, '#9ccc65'); g.addColorStop(1, '#689f38');
+//       ctx.fillStyle = g;
+//       ctx.beginPath();
+//       ctx.moveTo(0, height);
+//       for(let x=-20; x<=width+40; x+=20) {
+//         let y = height * 0.82 + Math.sin(x * 0.005) * 15;
+//         ctx.lineTo(x, y);
+//       }
+//       ctx.lineTo(width, height);
+//       ctx.fill();
+
+//       // 2. Bushes (Volume)
+//       for(let x=0; x<width; x+=100) {
+//         ctx.fillStyle = 'rgba(27, 94, 32, 0.3)';
+//         ctx.beginPath();
+//         ctx.arc(x + Math.sin(x)*40, height * 0.9 + Math.cos(x)*10, 40 + Math.sin(x)*20, 0, 7);
+//         ctx.fill();
+//       }
+
+//       // 3. Dense Grass Lower Half (1200 blades)
+//       const wind = Math.sin(globalTime * 0.8) * 4;
+//       ctx.lineCap = 'round';
+//       grass.slice(0, 600).forEach(g => {
+//         const lean = Math.sin(globalTime * 1.0 + g.off) * 3 + wind;
+//         ctx.strokeStyle = g.col; ctx.lineWidth = g.w; ctx.beginPath();
+//         ctx.moveTo(g.x, g.y); ctx.quadraticCurveTo(g.x + lean * 0.4, g.y - g.h * 0.5, g.x + lean, g.y - g.h); ctx.stroke();
+//       });
+
+//       // 4. Drifting Mist (Between Grass Layers)
+//       mist.forEach(m => {
+//         m.x = (m.x + m.sp * 0.016) % (width + 400);
+//         const gx = m.x - 200;
+//         const grad = ctx.createRadialGradient(gx, m.y, 0, gx, m.y, m.r);
+//         grad.addColorStop(0, 'rgba(255,255,255,0.18)');
+//         grad.addColorStop(1, 'rgba(255,255,255,0)');
+//         ctx.fillStyle = grad;
+//         ctx.beginPath(); ctx.arc(gx, m.y, m.r, 0, 7); ctx.fill();
+//       });
+
+//       // 5. Upper Half of Grass & Flowers
+//       grass.slice(600).forEach(g => {
+//         const lean = Math.sin(globalTime * 1.0 + g.off) * 3 + wind;
+//         ctx.strokeStyle = g.col; ctx.lineWidth = g.w; ctx.beginPath();
+//         ctx.moveTo(g.x, g.y); ctx.quadraticCurveTo(g.x + lean * 0.4, g.y - g.h * 0.5, g.x + lean, g.y - g.h); ctx.stroke();
+//       });
+
+//       flowers.forEach(f => {
+//         ctx.fillStyle = f.col;
+//         ctx.beginPath();
+//         ctx.arc(f.x + wind * 0.2, f.y, f.r, 0, 7);
+//         ctx.fill();
+//       });
+//     }
+
+//     function loop(now) {
+//       if(!isPlaying) { requestAnimationFrame(loop); return; }
+//       const dt = (now - lastDraw) / 1000;
+//       lastDraw = now;
+//       globalTime += dt;
+//       ctx.clearRect(0,0,width,height);
+
+//       // 1. Sky & Background Clouds
+//       drawSky();
+//       drawClouds(dt, 0, 2); 
+
+//       // 2. Sun/Moon
+//       drawSunMoon();
+
+//       // 3. Foreground Clouds
+//       drawClouds(dt, 2, 4);
+
+//       // 4. Landscape & Meadow
+//       drawMountains();
+//       drawMeadow();
+//       requestAnimationFrame(loop);
+//     }
+
+//     window.addEventListener("pauseWallpaper", () => isPlaying = false);
+//     window.addEventListener("playWallpaper", () => {
+//       if(!isPlaying) { isPlaying = true; lastDraw = performance.now(); loop(performance.now()); }
+//     });
+
+//     resize();
+//     window.addEventListener('resize', resize);
+//     requestAnimationFrame(loop);
+
+//   <\/script>
+// </body>
+// </html>`;
+
+export const GHIBLI_LANDSCAPE_CODE = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <style>
+    body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #020818; touch-action: none; }
+    canvas { display: block; position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+
+  <script>
+    // ── NATIVE CANVAS 2D ENGINE (Real-Time + Ultra-Battery Optimized) ──
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d', { alpha: false });
+    let width, height;
+    let isPlaying = true;
+    
+    // BATTERY FIX: Cap at 24 FPS for cinematic feel & low battery drain
+    const TARGET_FPS = 24;
+    const FRAME_INTERVAL = 1000 / TARGET_FPS;
+    
+    let timeOfDay = 12; 
+    let weather = 'clear'; // 'clear', 'rain', 'snow', 'thunder'
+    let season = 'spring'; 
+
+    // --- SVG PATHS PORTED FROM REACT NATIVE ---
+    const paths = {
+      cloud: new Path2D("M150,70c0-16.5-13.5-30-30-30c-2.2,0-4.3,0.3-6.4,0.8C106.8,24.8,91.9,15,75,15c-19.1,0-35,12.5-40,30c-13.8,0-25,11.2-25,25s11.2,25,25,25h90C138.8,95,150,83.8,150,70z"),
+      hillBack: new Path2D("M0,50 Q30,15 100,60 V100 H0 Z"),
+      hillMid: new Path2D("M-10,75 Q40,30 110,80 V100 H-10 Z"),
+      hillFront: new Path2D("M0,90 Q35,70 70,85 T110,95 V100 H0 Z"),
+      treeBot: new Path2D("M27.82,52.35l-15.39,-0.14c-1.8,3.95 -7.28,10.91 -10.7,16.43 1.92,-1.18 11.93,-1.98 14.9,-7.2l-1.6,7.42c2.56,2 5.94,1.77 7.14,0.76 -0.37,-5.85 -1,-7.85 -1,-7.85 1.58,1.36 10.9,4.89 16.29,6.77 -1.15,-1.72 -7.92,-12.9 -9.64,-16.18Z"),
+      treeMid: new Path2D("M11.03,51.5c-1.09,0.72 -9.26,6.33 -11.03,6.99 0.41,-1.39 9.12,-16.96 11.09,-19.56l15.81,-0.53c3.3,8.34 11.05,17.89 11.18,18.3 -0.38,-0.07 -7.56,-3.2 -10.26,-3.76 0,0 2.21,7.28 0.79,8.18 -1.13,0.72 -8.06,-5.83 -11.25,-7.65 -0.69,-0.39 -13.77,8.92 -13.25,7.5 1.58,-4.29 6.91,-9.47 6.91,-9.47Z"),
+      treeTop: new Path2D("M26.89,38.39c2.3,1.44 4.36,2.87 6.67,3.97 -0.23,-1.39 -5.48,-10.85 -9.46,-19.1H15.05C9.96,32.78 1.66,44.45 1.57,44.86c0.46,1.74 5.76,-3.25 9.37,-5.64 0,0 1.54,13.16 3.43,11.61 7.14,-5.88 12.53,-12.43 12.53,-12.43Z"),
+      treePeak: new Path2D("M24.45,24.59c1.51,0.97 6.99,8.21 5,-0.73 -1.82,-6.57 -3.74,-11.32 -8.55,-23.86 -0.28,1.18 -1.85,6.16 -5.33,13.91 -10.12,20.33 -3.31,11.98 0.74,9.51 3.55,11.13 2.78,15.26 8.15,1.17Z")
+    };
+
+    // --- COLOR INTERPOLATION ---
+    function hexToRgb(hex) {
+      let r = 0, g = 0, b = 0;
+      if (hex.length == 4) { r = parseInt(hex[1]+hex[1],16); g = parseInt(hex[2]+hex[2],16); b = parseInt(hex[3]+hex[3],16); }
+      else if (hex.length == 7) { r = parseInt(hex.substring(1,3),16); g = parseInt(hex.substring(3,5),16); b = parseInt(hex.substring(5,7),16); }
+      return [r, g, b];
+    }
+
+    function lerpColor(color1, color2, t) {
+      const c1 = hexToRgb(color1), c2 = hexToRgb(color2);
+      const r = Math.round(c1[0] + (c2[0] - c1[0]) * t);
+      const g = Math.round(c1[1] + (c2[1] - c1[1]) * t);
+      const b = Math.round(c1[2] + (c2[2] - c1[2]) * t);
+      return \`rgb(\${r},\${g},\${b})\`;
+    }
+
+    function interpolate(val, xArr, yArr) {
+      if (val <= xArr[0]) return yArr[0];
+      if (val >= xArr[xArr.length - 1]) return yArr[yArr.length - 1];
+      for (let i = 0; i < xArr.length - 1; i++) {
+        if (val >= xArr[i] && val <= xArr[i + 1]) {
+          let t = (val - xArr[i]) / (xArr[i + 1] - xArr[i]);
+          return lerpColor(yArr[i], yArr[i + 1], t);
+        }
+      }
+      return yArr[0];
+    }
+    
+    function interpolateNum(val, xArr, yArr) {
+        if (val <= xArr[0]) return yArr[0];
+        if (val >= xArr[xArr.length - 1]) return yArr[yArr.length - 1];
+        for (let i = 0; i < xArr.length - 1; i++) {
+            if (val >= xArr[i] && val <= xArr[i + 1]) {
+            let t = (val - xArr[i]) / (xArr[i + 1] - xArr[i]);
+            return yArr[i] + (yArr[i+1] - yArr[i]) * t;
+            }
+        }
+        return yArr[0];
+    }
+
+    // --- TIMELINES ---
+    const TIMES = [0, 5, 5.5, 6.5, 8, 12, 16, 17.5, 18.5, 19, 24];
+    const SKY_ZENITH =  ['#17193a', '#17193a', '#2a3a5c', '#75bec3', '#5a97d8', '#6fa6fa', '#5a97d8', '#75bec3', '#2a3a5c', '#17193a', '#17193a'];
+    const SKY_MID =     ['#303668', '#303668', '#4a5a8a', '#ffbbd5', '#90b8e8', '#b1d1f4', '#90b8e8', '#ffe3ae', '#4a5a8a', '#303668', '#303668'];
+    const SKY_HORIZON = ['#38477a', '#38477a', '#6a5a8a', '#ffd6b9', '#c8ddf4', '#e6e6e6', '#c8ddf4', '#ffc5ab', '#6a5a8a', '#38477a', '#38477a'];
+    const SKY_GROUND =  ['#252c56', '#252c56', '#4a3a6a', '#d4a88a', '#a8c8e8', '#d0dff0', '#a8c8e8', '#c48878', '#4a3a6a', '#252c56', '#252c56'];
+    
+    const SEASONS = {
+        spring: { hill: ['#2c3e50', '#5a7e3a', '#5a7e3a', '#3e4b25', '#2c3e50'], treeBg: ['#1B2735', '#2c3e50', '#1B2735'], treeMid: ['#0e141a', '#1a252f', '#0e141a'], treeFore: ['#0e141a', '#2d5a27', '#0e141a'] },
+        summer: { hill: ['#062a1a', '#0a5d38', '#10b981', '#059669', '#062a1a'], treeBg: ['#062a1a', '#064e3b', '#062a1a'], treeMid: ['#043020', '#064e3b', '#043020'], treeFore: ['#043020', '#10b981', '#043020'] },
+        autumn: { hill: ['#0e141a', '#a0744d', '#a0744d', '#713f37', '#0e141a'], treeBg: ['#1B2735', '#422419', '#1B2735'], treeMid: ['#1B2735', '#5e311a', '#1B2735'], treeFore: ['#1B2735', '#834c24', '#1B2735'] },
+        winter: { hill: ['#1B2735', '#406983', '#406983', '#242949', '#1B2735'], treeBg: ['#1B2735', '#1B2735', '#1B2735'], treeMid: ['#1B2735', '#2c3e50', '#1B2735'], treeFore: ['#1B2735', '#2c3e50', '#1B2735'] },
+    };
+
+    const WATER_DEEP = ['#0B1026', '#1f71d5', '#5fa8ff', '#1B2735', '#0B1026'];
+    const WATER_SHAL = ['#1a252f', '#75bec3', '#80f9ff', '#2c3e50', '#1a252f'];
+
+    // --- ENTITIES ---
+    let stars = [], clouds = [], treesBg = [], treesMid = [], treesFore = [], animeParticles = [], lightningPath = "";
+    let thunderFlash = 0, windAnim = 0, globalTime = 0;
+
+    function resize() {
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas.width = width * window.devicePixelRatio;
+      canvas.height = height * window.devicePixelRatio;
+      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+      generateScene();
+    }
+
+    function generateScene() {
+      stars = Array.from({length: 120}).map(() => ({
+        x: Math.random() * width, y: Math.random() * height * 0.55,
+        r: 0.5 + Math.random() * 1.2, baseOp: 0.5 + Math.random() * 0.5, phase: Math.random() * Math.PI * 2
+      }));
+
+      clouds = [
+        { size: 120, y: 50, speed: 0.08, x: Math.random() * width, flip: 1 },
+        { size: 160, y: 130, speed: 0.12, x: Math.random() * width, flip: -1 },
+        { size: 90, y: 90, speed: 0.05, x: Math.random() * width, flip: 1 },
+        { size: 140, y: 180, speed: 0.15, x: Math.random() * width, flip: -1 },
+      ];
+
+      animeParticles = Array.from({length: 25}).map(() => ({
+        x: Math.random() * width, y: Math.random() * height * 1.5,
+        size: Math.random() * 1.5 + 0.8, phase: Math.random() * Math.PI * 2, speed: 0.5 + Math.random() * 0.5
+      }));
+
+      const genTrees = (minW, maxW, minH, maxH, baseBot, windStr) => {
+        let arr = [], curX = -10;
+        while(curX < width + 20) {
+          let w = minW + Math.random() * (maxW - minW);
+          let h = minH + Math.random() * (maxH - minH);
+          let bot = baseBot + (Math.random() * 20 - 10);
+          arr.push({ w, h, x: curX, y: height - bot, phase: Math.random(), windStr });
+          curX += w + (w * 0.2 + Math.random() * (w * 1.5));
+        }
+        return arr;
+      };
+      treesBg = genTrees(20, 30, 35, 50, height * 0.35, 0.4);
+      treesMid = genTrees(35, 50, 65, 90, height * 0.25, 0.7);
+      treesFore = genTrees(60, 90, 100, 150, height * 0.10, 1.0);
+    }
+
+    // --- DRAWING FUNCTIONS ---
+    function drawSky() {
+      const grad = ctx.createLinearGradient(0, 0, 0, height);
+      grad.addColorStop(0, interpolate(timeOfDay, TIMES, SKY_ZENITH));
+      grad.addColorStop(0.38, interpolate(timeOfDay, TIMES, SKY_MID));
+      grad.addColorStop(0.75, interpolate(timeOfDay, TIMES, SKY_HORIZON));
+      grad.addColorStop(1, interpolate(timeOfDay, TIMES, SKY_GROUND));
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, width, height);
+
+      let glowOp = 0;
+      if (timeOfDay >= 5.5 && timeOfDay <= 7.5) glowOp = 0.35 * (1 - Math.abs(timeOfDay - 6.5) / 1);
+      if (timeOfDay >= 16.5 && timeOfDay <= 19) glowOp = 0.4 * (1 - Math.abs(timeOfDay - 17.8) / 1.2);
+      if (glowOp > 0) {
+        const rad = ctx.createRadialGradient(width/2, height*0.85, 0, width/2, height*0.85, height*0.5);
+        rad.addColorStop(0, \`rgba(255, 110, 64, \${glowOp.toFixed(2)})\`);
+        rad.addColorStop(1, 'rgba(255, 110, 64, 0)');
+        ctx.fillStyle = rad;
+        ctx.fillRect(0, height*0.4, width, height*0.5);
+      }
+
+      let starOp = 0;
+      if (timeOfDay <= 5) starOp = 0.8;
+      else if (timeOfDay <= 6) starOp = 0.8 * (1 - (timeOfDay - 5));
+      else if (timeOfDay >= 19) starOp = 0.8 * Math.min(1, (timeOfDay - 19));
+      else if (timeOfDay >= 18) starOp = 0.8 * Math.max(0, (timeOfDay - 18));
+      
+      if (starOp > 0) {
+        ctx.fillStyle = '#ffffff';
+        stars.forEach(s => {
+          ctx.globalAlpha = starOp * (s.baseOp + Math.sin(globalTime * 2 + s.phase) * 0.3);
+          ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI*2); ctx.fill();
+        });
+        ctx.globalAlpha = 1;
+      }
+    }
+
+    function drawSunMoon() {
+      const sunProg = interpolateNum(timeOfDay, [6, 18], [0, 1]);
+      if (sunProg > 0 && sunProg < 1) {
+        const sx = -20 + sunProg * (width + 40);
+        const sy = height * 0.45 - Math.sin(sunProg * Math.PI) * (height * 0.35);
+        const sScale = 0.55 + (0.5 - Math.abs(sunProg - 0.5)) * 0.8;
+        
+        ctx.save(); ctx.translate(sx, sy); ctx.scale(sScale, sScale);
+        
+        let sunsetOp = interpolateNum(timeOfDay, [4.5, 6, 7.5, 16.5, 18, 19.5], [0, 1, 0, 0, 1, 0]);
+        if(sunsetOp > 0) {
+          let sg = ctx.createRadialGradient(0,0,0, 0,0,45);
+          sg.addColorStop(0, \`rgba(255,255,255,\${sunsetOp})\`); sg.addColorStop(0.3, \`rgba(255,237,213,\${0.8*sunsetOp})\`);
+          sg.addColorStop(0.6, \`rgba(253,186,116,\${0.3*sunsetOp})\`); sg.addColorStop(1, \`rgba(253,186,116,0)\`);
+          ctx.fillStyle = sg; ctx.beginPath(); ctx.arc(0,0,45,0,Math.PI*2); ctx.fill();
+        }
+        
+        let noonOp = interpolateNum(timeOfDay, [6, 7.5, 16.5, 18], [0, 1, 1, 0]);
+        if(noonOp > 0) {
+          let ng = ctx.createRadialGradient(0,0,0, 0,0,35);
+          ng.addColorStop(0, \`rgba(255,255,255,\${noonOp})\`); ng.addColorStop(0.4, \`rgba(254,240,138,\${0.4*noonOp})\`);
+          ng.addColorStop(1, \`rgba(254,240,138,0)\`);
+          ctx.fillStyle = ng; ctx.beginPath(); ctx.arc(0,0,35,0,Math.PI*2); ctx.fill();
+        }
+        
+        ctx.fillStyle = 'rgba(255,255,255,0.4)'; ctx.beginPath(); ctx.arc(0,0,16,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(0,0,12,0,Math.PI*2); ctx.fill();
+        ctx.restore();
+      }
+
+      let moonProg = 0;
+      if (timeOfDay >= 18) moonProg = interpolateNum(timeOfDay, [18, 24], [0, 0.5]);
+      else if (timeOfDay < 6) moonProg = interpolateNum(timeOfDay, [0, 6], [0.5, 1]);
+      
+      if (timeOfDay >= 17.5 || timeOfDay <= 6.5) {
+        const mx = -20 + moonProg * (width + 40);
+        const my = height * 0.45 - Math.sin(moonProg * Math.PI) * (height * 0.35);
+        
+        ctx.save(); ctx.translate(mx, my); ctx.scale(0.8, 0.8);
+        
+        let boost = interpolateNum(timeOfDay, [0,6,12,18,24], [1,0.15,0,0.15,1]);
+        let pulse = 0.7 + Math.sin(globalTime * 2) * 0.15;
+        let mr = 25 + (25 * boost);
+        
+        let mg = ctx.createRadialGradient(0,0,0, 0,0,mr);
+        mg.addColorStop(0.2, \`rgba(255,255,255,\${0.8*pulse*boost})\`); mg.addColorStop(0.5, \`rgba(191,219,254,\${0.25*pulse*boost})\`);
+        mg.addColorStop(1, \`rgba(255,255,255,0)\`);
+        ctx.fillStyle = mg; ctx.beginPath(); ctx.arc(0,0,mr,0,Math.PI*2); ctx.fill();
+        
+        ctx.rotate(-18 * Math.PI / 180);
+        ctx.fillStyle = "#F8FAFC"; ctx.beginPath(); ctx.arc(0,0,25,0,Math.PI*2); ctx.fill();
+        
+        ctx.fillStyle = "rgba(203,213,225,0.3)"; ctx.beginPath(); ctx.arc(-5,-10,4.5,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle = "rgba(203,213,225,0.15)"; ctx.beginPath(); ctx.arc(10,5,7,0,Math.PI*2); ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    function drawClouds(dt) {
+      ctx.fillStyle = '#f8fafc';
+      clouds.forEach(c => {
+        c.x -= c.speed * dt * 30;
+        if (c.x < -c.size*2) c.x = width + c.size;
+        
+        ctx.save();
+        ctx.globalAlpha = 0.9;
+        ctx.translate(c.x, c.y);
+        ctx.scale(c.flip * (c.size/160), c.size/160);
+        
+        ctx.save(); ctx.translate(0, 6); ctx.fillStyle = 'rgba(0,0,0,0.08)'; ctx.fill(paths.cloud); ctx.restore();
+        ctx.fillStyle = '#f8fafc'; ctx.fill(paths.cloud);
+        ctx.save(); ctx.translate(-4, -4); ctx.scale(0.96, 0.96); ctx.fillStyle = 'rgba(255,255,255,0.8)'; ctx.fill(paths.cloud); ctx.restore();
+        
+        ctx.restore();
+      });
+    }
+
+    function drawLandscape() {
+      const s = SEASONS[season];
+      const mtnColor = interpolate(timeOfDay, [0,6,12,18,24], s.hill);
+      
+      const drawHill = (path, tY, op, gradColors, stroke) => {
+        ctx.save();
+        ctx.translate(0, height * 0.65 + tY); 
+        ctx.scale(width * 1.5 / 100, height * 0.35 / 100);
+        
+        ctx.globalAlpha = op;
+        ctx.fillStyle = mtnColor; ctx.fill(path);
+        if (stroke) { ctx.lineWidth = 1; ctx.strokeStyle = stroke; ctx.stroke(path); }
+        
+        let grad = ctx.createLinearGradient(0,0,0,100);
+        grad.addColorStop(0, gradColors[0]); grad.addColorStop(1, gradColors[1]);
+        ctx.fillStyle = grad; ctx.fill(path);
+        ctx.restore();
+      };
+
+      drawHill(paths.hillBack, 0, 0.4, ['rgba(255,255,255,0.2)', 'rgba(0,0,0,0.1)']);
+      
+      let fogOp = (weather === 'fog' || weather === 'haze') ? 0.85 : 0;
+      if (fogOp > 0) {
+        let fg = ctx.createLinearGradient(0, height*0.65, 0, height);
+        fg.addColorStop(0.3, \`rgba(226,232,240,0)\`); fg.addColorStop(1, \`rgba(226,232,240,\${fogOp})\`);
+        ctx.fillStyle = fg; ctx.fillRect(0, height*0.65, width, height*0.35);
+      }
+
+      drawHill(paths.hillMid, 10, 0.7, ['rgba(255,255,255,0.1)', 'rgba(0,0,0,0.3)'], 'rgba(255,255,255,0.2)');
+      drawHill(paths.hillFront, 20, 1, ['rgba(0,0,0,0)', 'rgba(0,0,0,0.6)'], 'rgba(255,255,255,0.3)');
+    }
+
+    function drawTrees() {
+      const s = SEASONS[season];
+      const colBg = interpolate(timeOfDay, [0,12,24], s.treeBg);
+      const colMid = interpolate(timeOfDay, [0,12,24], s.treeMid);
+      const colFore = interpolate(timeOfDay, [0,12,24], s.treeFore);
+
+      const renderLayer = (trees, color) => {
+        trees.forEach(t => {
+          ctx.save();
+          let phased = windAnim * Math.cos(t.phase * Math.PI * 2);
+          let deg = phased * t.windStr * 6;
+          let tx = phased * t.windStr * (t.w * 0.05);
+          
+          ctx.translate(t.x + tx, t.y);
+          ctx.rotate(deg * Math.PI / 180);
+          ctx.translate(0, -t.h); 
+          ctx.scale(t.w / 38.08, t.h / 70.37); 
+
+          ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.beginPath(); ctx.ellipse(19, 66, 15, 3.5, 0, 0, Math.PI*2); ctx.fill();
+          
+          ctx.fillStyle = color; ctx.fill(paths.treeBot); ctx.fillStyle = 'rgba(0,0,0,0.4)'; ctx.fill(paths.treeBot);
+          ctx.fillStyle = color; ctx.fill(paths.treeMid); ctx.fillStyle = 'rgba(0,0,0,0.2)'; ctx.fill(paths.treeMid);
+          ctx.fillStyle = color; ctx.fill(paths.treeTop); ctx.fillStyle = 'rgba(255,255,255,0.1)'; ctx.fill(paths.treeTop);
+          ctx.fillStyle = color; ctx.fill(paths.treePeak); ctx.fillStyle = 'rgba(255,255,255,0.25)'; ctx.fill(paths.treePeak);
+          
+          ctx.restore();
+        });
+      };
+
+      renderLayer(treesBg, colBg);
+      renderLayer(treesMid, colMid);
+      renderLayer(treesFore, colFore);
+    }
+
+    function drawWater() {
+      const startY = height * 0.90;
+      const hours = new Date().getHours() + new Date().getMinutes()/60;
+      const isNight = hours < 6 || hours > 19;
+      
+      const deepCol = interpolate(timeOfDay, [0,6,12,18,24], WATER_DEEP);
+      const shalCol = interpolate(timeOfDay, [0,6,12,18,24], WATER_SHAL);
+      
+      // 1. Deep Base
+      ctx.fillStyle = deepCol;
+      ctx.fillRect(0, startY, width, height - startY);
+
+      // 2. Sun/Moon Path Reflection
+      const sunProg = interpolateNum(timeOfDay, [6, 18], [0, 1]);
+      const moonProg = (timeOfDay >= 18) ? interpolateNum(timeOfDay, [18, 24], [0, 0.5]) : interpolateNum(timeOfDay, [0, 6], [0.5, 1]);
+      const activeX = (sunProg > 0 && sunProg < 1) ? (-20 + sunProg * (width + 40)) : (-20 + moonProg * (width + 40));
+      
+      const pathGrad = ctx.createLinearGradient(activeX - 60, 0, activeX + 60, 0);
+      const pCol = isNight ? 'rgba(191,219,254,0.35)' : 'rgba(255,251,235,0.45)';
+      pathGrad.addColorStop(0, 'rgba(0,0,0,0)'); pathGrad.addColorStop(0.5, pCol); pathGrad.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = pathGrad;
+      ctx.fillRect(activeX - 80, startY, 160, height - startY);
+
+      // 3. Painterly Waves (The 'Ponyo' Style)
+      const drawGhibliWave = (yOff, amp, freq, speed, phase, col, isTop) => {
+        ctx.save();
+        ctx.translate(0, startY + yOff);
+        ctx.fillStyle = col;
+        ctx.beginPath();
+        ctx.moveTo(0, 100); ctx.lineTo(0, 0);
+        let shift = -(globalTime * speed) % (width * 2);
+        for(let x=0; x<=width+10; x+=4) {
+          let tx = x - shift;
+          let y = Math.sin((tx / width) * Math.PI * freq + phase) * amp;
+          ctx.lineTo(x, y);
+        }
+        ctx.lineTo(width, 100); ctx.fill();
+        
+        if (isTop) {
+          ctx.strokeStyle = '#fff'; ctx.lineWidth = 2.5; ctx.globalAlpha = 0.5;
+          ctx.stroke();
+        }
+        ctx.restore();
+      };
+
+      drawGhibliWave(2, 6, 4, 6, 0, shalCol, false);
+      drawGhibliWave(15, 8, 3, 10, Math.PI, shalCol, false);
+      drawGhibliWave(30, 10, 2, 16, Math.PI/2, shalCol, true);
+
+      // 4. Horizontal Glimmer Ripples
+      ctx.save();
+      ctx.lineWidth = 1.5;
+      for(let i=0; i<8; i++) {
+        let y = startY + 10 + (i * 8);
+        let op = 0.1 + (i * 0.05);
+        ctx.strokeStyle = \`rgba(255,255,255,\${op})\`;
+        ctx.beginPath();
+        for(let x=0; x<width; x+=60) {
+          let gx = x + Math.sin(globalTime * 0.4 + i) * 60;
+          let gw = 30 + Math.sin(globalTime * 0.3 + i) * 20;
+          ctx.moveTo(gx, y); ctx.lineTo(gx + gw, y);
+        }
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    function drawWeather() {
+      if (weather === 'thunder' || weather === 'storm') {
+        if (thunderFlash > 0) {
+          ctx.fillStyle = \`rgba(203, 213, 225, \${thunderFlash * 0.3})\`;
+          ctx.fillRect(0,0,width,height);
+          
+          if (lightningPath) {
+            ctx.lineJoin = 'round';
+            const p = new Path2D(lightningPath);
+            ctx.strokeStyle = \`rgba(167, 139, 250, \${thunderFlash * 0.8})\`;
+            ctx.lineWidth = 20; ctx.stroke(p);
+            ctx.strokeStyle = \`rgba(255, 255, 255, \${thunderFlash})\`;
+            ctx.lineWidth = 4; ctx.stroke(p);
+          }
+        }
+      }
+
+      if (weather === 'rain' || weather === 'thunder' || weather === 'storm') {
+        ctx.lineCap = 'round';
+        const drawR = (count, len, slant, speed, col, wid) => {
+          ctx.strokeStyle = col; ctx.lineWidth = wid; ctx.beginPath();
+          for(let i=0; i<count; i++) {
+            let x = (i * (width*1.5)/count) - width*0.2;
+            let y = -height + ((globalTime * speed + i*100) % (height*2));
+            ctx.moveTo(x, y); ctx.lineTo(x + slant, y + len);
+          }
+          ctx.stroke();
+        };
+        drawR(40, 20, -10, 600, 'rgba(186, 212, 255, 0.2)', 1); 
+        drawR(20, 45, -15, 900, 'rgba(219, 234, 254, 0.4)', 1.8);
+        drawR(10, 80, -25, 1250, 'rgba(255, 255, 255, 0.6)', 3);
+      }
+
+      if (weather === 'snow') {
+        ctx.lineCap = 'round';
+        const drawS = (count, speed, sway, col, wid) => {
+          ctx.strokeStyle = col; ctx.lineWidth = wid; ctx.beginPath();
+          let swayX = Math.sin(globalTime * sway) * (wid * 3);
+          for(let i=0; i<count; i++) {
+            let x = (i * width/count) + swayX;
+            let y = -height + ((globalTime * speed + i*200) % (height*2));
+            ctx.moveTo(x, y); ctx.lineTo(x, y+0.1); 
+          }
+          ctx.stroke();
+        };
+        drawS(70, 75, 2, 'rgba(255, 255, 255, 0.4)', 3); 
+        drawS(40, 150, 1.5, 'rgba(255, 255, 255, 0.8)', 6);
+      }
+    }
+
+    function drawAnimeParticles() {
+      animeParticles.forEach(p => {
+        let y = -((globalTime * 50 * p.speed) % (height * 1.5)) + height * 1.5; 
+        let x = p.x + Math.sin(globalTime * 2) * 15;
+        let op = 0.4 + Math.abs(Math.sin(globalTime * 5 + p.phase)) * 0.6;
+        
+        ctx.globalAlpha = op * 0.25;
+        ctx.fillStyle = '#fbbf24'; ctx.beginPath(); ctx.arc(x + Math.sin(p.phase)*10, y, p.size*3.5, 0, Math.PI*2); ctx.fill();
+        
+        ctx.globalAlpha = op * 0.9;
+        ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(x + Math.sin(p.phase)*10, y, p.size, 0, Math.PI*2); ctx.fill();
+      });
+      ctx.globalAlpha = 1;
+    }
+
+    // --- GAME LOOP ---
+    let lastDrawTime = Date.now();
+    let lastLogicTime = Date.now();
+    
+    function loop() {
+      if(!isPlaying) { requestAnimationFrame(loop); return; }
+      
+      const now = Date.now();
+      const elapsedDraw = now - lastDrawTime;
+      
+      if (elapsedDraw < FRAME_INTERVAL) {
+        requestAnimationFrame(loop);
+        return;
+      }
+      
+      const dt = (now - lastLogicTime) / 1000;
+      lastLogicTime = now;
+      lastDrawTime = now - (elapsedDraw % FRAME_INTERVAL);
+
+      globalTime += dt * 0.5; 
+
+      // ── HARDWIRED REAL-TIME SYNC ──
+      const d = new Date();
+      timeOfDay = d.getHours() + (d.getMinutes() / 60) + (d.getSeconds() / 3600);
+
+      if (Math.random() < 0.01) windAnim = Math.min(1, windAnim + 0.1);
+      else windAnim = Math.max(0, windAnim - 0.02);
+
+      ctx.clearRect(0, 0, width, height);
+
+      drawSky();
+      drawSunMoon();
+      drawClouds(dt);
+      drawLandscape();
+      drawTrees();
+      drawWater();
+
+      let nightOp = interpolateNum(timeOfDay, [0,6,12,18,24], [0.65, 0.1, 0, 0.1, 0.65]);
+      if (nightOp > 0) {
+        ctx.fillStyle = \`rgba(2, 8, 24, \${nightOp})\`;
+        ctx.fillRect(0,0,width,height);
+      }
+
+      drawWeather();
+      drawAnimeParticles();
+
+      requestAnimationFrame(loop);
+    }
+
+    setInterval(() => {
+      if (weather === 'thunder' || weather === 'storm') {
+        let curX = Math.random() * width, curY = 0;
+        let d = \`M\${curX},0\`;
+        for(let i=0; i<10; i++){
+          curX += (Math.random() - 0.5) * 120; curY += height/10 + (Math.random()*20);
+          d += \` L\${curX},\${curY}\`;
+        }
+        lightningPath = d;
+        thunderFlash = 1;
+        setTimeout(()=> thunderFlash = 0, 40);
+        setTimeout(()=> thunderFlash = 0.6, 140);
+        setTimeout(()=> thunderFlash = 0, 180);
+      }
+    }, 4500);
+
+    window.addEventListener("pauseWallpaper", () => isPlaying = false);
+    window.addEventListener("playWallpaper", () => {
+      if(!isPlaying) {
+        isPlaying = true;
+        lastLogicTime = Date.now();
+        lastDrawTime = Date.now();
+        loop();
+      }
+    });
+
+    setTimeout(() => {
+      resize();
+      window.addEventListener('resize', resize);
+      loop();
+    }, 100);
+
+  <\/script>
+</body>
+</html>`;
+
+
+
 export const MOCK_CATEGORIES: Category[] = [
   {
     id: 'live',
@@ -3003,6 +3813,14 @@ export const MOCK_CATEGORIES: Category[] = [
     image: require('../assets/images/categories/category-3.webp'),
     count: '98+',
     type: 'image'
+  },
+  {
+    id: 'chill_nature_live',
+    name: { en: 'chill nature live', hi: 'चिल नेचर लाइव', ja: 'チル ネイチャー ライブ', fr: 'Nature détente en direct' },
+    title: 'chill nature live',
+    image: 'https://images.unsplash.com/photo-1547036967-23d11aacaee0?q=80&w=2000',
+    count: '1 New',
+    type: 'live'
   },
 ];
 
@@ -4427,6 +5245,15 @@ export const MOCK_WALLPAPERS: Wallpaper[] = [
     type: 'interactive',
     category: { id: 'live', name: { en: 'Interactive' } },
     indexCode: CYBER_CORE_3D_CODE
+  },
+  {
+    _id: 'html_ghibli_landscape',
+    url: 'https://images.unsplash.com/photo-1517482811403-125032338167?q=80&w=1080', // Replace with a nice cartoon sky image
+    thumbnail: 'https://images.unsplash.com/photo-1517482811403-125032338167?q=80&w=400',
+    author: 'Toss Studio',
+    type: 'interactive',
+    category: { id: 'chill_nature_live', name: { en: 'chill nature live' } },
+    indexCode: GHIBLI_LANDSCAPE_CODE
   },
   {
     _id: 'abstract_1',
