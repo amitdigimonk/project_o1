@@ -18,41 +18,45 @@ export interface UserSyncData {
  * Using installationId or a fallback.
  */
 const getDeviceId = (): string => {
-    // expo-constants installationId is consistent across installs on most platforms
-    return Constants.installationId || Device.modelName || 'unknown-device';
+    // Constants.installationId is deprecated/null in newer Expo versions.
+    // We combine model and name if installationId is missing, 
+    // or you can use expo-application's getIosIdForVendorAsync/getAndroidId in a real app.
+    return Constants.installationId || `${Device.modelName}-${Device.osInternalBuildId}` || 'unknown-device';
 };
 
 /**
- * Synchronizes user data with the backend.
+ * Synchronizes device data with the backend.
  * Uses local caching to avoid redundant API calls.
  */
 export const syncUser = async (data: UserSyncData) => {
     try {
-        const device_id = getDeviceId();
+        const deviceId = getDeviceId();
+        const platform = Device.osName?.toLowerCase() as 'android' | 'ios' | 'web' || 'android';
+        
         const payload = {
-            device_id,
-            ...data
+            deviceId,
+            fcmToken: data.fcmToken || 'placeholder_token', // Placeholder if not provided
+            platform,
+            language: data.lng || 'en',
         };
 
         // Check if data has changed since last successful sync
         const lastSyncedStr = await AsyncStorage.getItem(LAST_SYNCED_DATA_KEY);
         if (lastSyncedStr === JSON.stringify(payload)) {
-            console.log('[UserService] Data unchanged, skipping sync');
             return;
         }
 
-        console.log('[UserService] Syncing user data with backend...');
-        const result = await apiRequest('/users', {
+        const result = await apiRequest('/devices/register', {
             method: 'POST',
             body: payload,
         });
 
-        if (result.success) {
+        if (result.status === 'success') {
             // Cache successful sync
             await AsyncStorage.setItem(LAST_SYNCED_DATA_KEY, JSON.stringify(payload));
-            console.log('[UserService] User synchronized successfully');
+            console.log('[UserService] Device synchronized with backend');
         }
     } catch (error) {
-        console.error('[UserService] Failed to sync user:', error);
+        console.error('[UserService] Failed to sync device:', error);
     }
 };

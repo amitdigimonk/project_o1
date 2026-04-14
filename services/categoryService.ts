@@ -1,4 +1,4 @@
-import { apiRequest } from './api';
+import { apiRequest, getImageUrl } from './api';
 import { Category } from '@/types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -24,16 +24,19 @@ const saveCategoriesToCache = async (data: Category[]) => {
 
 export const fetchHomeCategories = async (lng: string): Promise<Category[]> => {
     const result = await apiRequest<Category[]>(`/categories?type=home&lng=${lng}`);
-    
+
+    console.log(result, "result")
+
     if (result.success) {
         // Map localized names if they are objects
         const categories = result.data.map((cat: Category) => ({
             ...cat,
             name: typeof cat.name === 'object' ? (cat.name[lng] || cat.name['en']) : cat.name,
+            image: getImageUrl(cat.image),
         }));
         saveCategoriesToCache(categories);
         return categories;
     }
-    
+
     throw new Error(result.message || 'Failed to fetch categories');
 };

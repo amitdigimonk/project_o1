@@ -111,7 +111,7 @@ const WallpaperCard = React.memo(({ item, index, colors, onPress, onLongPress }:
             delayLongPress={400}
         >
             <Image
-                source={{ uri: item.url }}
+                source={{ uri: item.image }}
                 style={[styles.image, { height: index % 2 === 0 ? 260 : 200, backgroundColor: colors.border }]}
                 contentFit="cover"
                 transition={300}

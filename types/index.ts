@@ -15,9 +15,13 @@ export interface Category {
 
 export interface Wallpaper {
   _id: string;
-  url: string;
+  image: string;
   thumbnail: string;
-  author: string;
+  wall_details: {
+    author: string;
+    resolutions?: string;
+    [key: string]: any;
+  };
   type: 'image' | 'video' | 'interactive' | 'live';
   category: any;
   indexCode: string | null;

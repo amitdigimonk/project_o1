@@ -199,7 +199,7 @@ export default function PreviewScreen() {
 
     const handleLongPress = useCallback((item: Wallpaper) => {
         if (item.type !== 'interactive') {
-            setPendingUrl(item.url);
+            setPendingUrl(item.image);
             setIsSheetVisible(true);
         }
     }, []);

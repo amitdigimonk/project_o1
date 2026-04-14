@@ -1,4 +1,4 @@
-import { apiRequest } from './api';
+import { apiRequest, getImageUrl } from './api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Wallpaper } from '@/types';
 
@@ -30,7 +30,7 @@ export const fetchWallpapersByCategory = async (
     limit = 20,
     onBackgroundUpdate?: (data: Wallpaper[]) => void
 ): Promise<Wallpaper[]> => {
-    let endpoint = `/wallpapers?page=${page}&limit=${limit}`;
+    let endpoint = `/walls?page=${page}&limit=${limit}`;
     if (categoryId && categoryId !== 'All') {
         endpoint += `&categoryId=${categoryId}`;
     }
@@ -38,15 +38,21 @@ export const fetchWallpapersByCategory = async (
     const result = await apiRequest<Wallpaper[]>(endpoint);
     
     if (result.success) {
+        const wallpapers = result.data.map((wp: any) => ({
+            ...wp,
+            image: getImageUrl(wp.image),
+            thumbnail: wp.thumbnail ? getImageUrl(wp.thumbnail) : getImageUrl(wp.image),
+        }));
+
         if (page === 1) {
-            saveWallpapersToCache(categoryId, result.data);
+            saveWallpapersToCache(categoryId, wallpapers);
         }
 
         if (onBackgroundUpdate) {
-            onBackgroundUpdate(result.data);
+            onBackgroundUpdate(wallpapers);
         }
 
-        return result.data;
+        return wallpapers;
     }
     
     throw new Error(result.message || 'Failed to fetch wallpapers');

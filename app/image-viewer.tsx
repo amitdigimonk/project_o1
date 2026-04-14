@@ -100,7 +100,7 @@ const GalleryItem = React.memo(({ item, colors, t, onApply }: GalleryItemProps) 
             <GestureDetector gesture={gesture}>
                 <Animated.View style={[styles.imageContainer, animatedImageStyle]}>
                     <Image
-                        source={{ uri: item.url }}
+                        source={{ uri: item.image }}
                         style={styles.image}
                         contentFit="cover"
                         transition={300}
@@ -117,7 +117,7 @@ const GalleryItem = React.memo(({ item, colors, t, onApply }: GalleryItemProps) 
                 <View style={styles.metaContent}>
                     <View style={styles.metaHeader}>
                         <View>
-                            <CustomText variant="heading" style={{ fontSize: 24 }}>{item.author || 'Creative Artist'}</CustomText>
+                            <CustomText variant="heading" style={{ fontSize: 24 }}>{item.wall_details?.author || 'Creative Artist'}</CustomText>
                             <CustomText variant="caption">{t('imageViewer.metaAuthor')}</CustomText>
                         </View>
                         <Pressable style={[styles.downloadBtn, { backgroundColor: colors.border }]}>
@@ -241,7 +241,7 @@ export default function ImageViewerScreen() {
         }
 
         // Static Wallpaper Flow
-        setPendingUrl(item.url);
+        setPendingUrl(item.image);
         if (Platform.OS === 'android') {
             setIsSheetVisible(true);
         } else {
@@ -264,10 +264,10 @@ export default function ImageViewerScreen() {
             setCurrentPage(currentIndex);
             [1, 2].forEach(offset => {
                 const nextItem = wallpapers[currentIndex + offset];
-                if (nextItem) Image.prefetch(nextItem.url);
+                if (nextItem) Image.prefetch(nextItem.image);
             });
             const prevItem = wallpapers[currentIndex - 1];
-            if (prevItem) Image.prefetch(prevItem.url);
+            if (prevItem) Image.prefetch(prevItem.image);
         }
     }).current;
 
