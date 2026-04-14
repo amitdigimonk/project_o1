@@ -10,7 +10,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Redirect, useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Image, InteractionManager, Platform, RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, InteractionManager, Platform, RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import Animated, { cancelAnimation, Easing, interpolateColor, useAnimatedProps, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withSpring, withTiming } from 'react-native-reanimated';
 import Svg, { Circle, Ellipse, Path } from 'react-native-svg';
 
@@ -149,7 +149,7 @@ export default function HomeScreen() {
     }
   }, [i18n.language]);
 
-  const arrowX = useSharedValue(0);
+
 
   useEffect(() => {
     if (Platform.OS === 'web') {
@@ -162,17 +162,7 @@ export default function HomeScreen() {
     }
   }, [loadCategories]);
 
-  useEffect(() => {
-    arrowX.value = withRepeat(
-      withTiming(4, { duration: 1000, easing: Easing.inOut(Easing.sin) }),
-      -1,
-      true
-    );
-  }, []);
 
-  const arrowAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: arrowX.value }],
-  }));
 
   const onRefresh = useCallback(() => {
     setIsRefreshing(true);
@@ -217,11 +207,6 @@ export default function HomeScreen() {
     >
       <View style={styles.header}>
         <View style={styles.headerTitleContainer}>
-          <Image
-            source={require('@/assets/images/logo.png')}
-            style={styles.logo}
-            resizeMode="contain"
-          />
           <View style={styles.captionRow}>
             <ChameleonHanger />
             <CustomText variant="caption" color={colors.primary}>{t('home.caption')}</CustomText>
