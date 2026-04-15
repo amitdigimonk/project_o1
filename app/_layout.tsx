@@ -9,6 +9,7 @@ import { SettingsProvider } from '@/context/SettingsContext';
 import { ToastProvider } from '@/components/Toast';
 import { useTheme } from '@/hooks/useTheme';
 import { useUserSync } from '@/hooks/useUserSync';
+import { registerDevice } from '@/services/deviceService';
 import { StatusBar } from 'expo-status-bar';
 import '@/services/i18n';
 
@@ -17,6 +18,10 @@ SplashScreen.preventAutoHideAsync();
 function LayoutContent() {
   const { isDark, colors } = useTheme();
   useUserSync();
+
+  useEffect(() => {
+    registerDevice().catch(console.error);
+  }, []);
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>

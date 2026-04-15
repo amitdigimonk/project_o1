@@ -28,7 +28,6 @@ export const fetchHomeCategories = async (lng: string): Promise<Category[]> => {
     console.log(result, "result")
 
     if (result.success) {
-        // Map localized names if they are objects
         const categories = result.data.map((cat: Category) => ({
             ...cat,
             name: typeof cat.name === 'object' ? (cat.name[lng] || cat.name['en']) : cat.name,

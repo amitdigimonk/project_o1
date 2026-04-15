@@ -25,18 +25,18 @@ const saveWallpapersToCache = async (categoryId: string | undefined, data: Wallp
 };
 
 export const fetchWallpapersByCategory = async (
-    categoryId?: string, 
-    page = 1, 
+    categoryId?: string,
+    page = 1,
     limit = 20,
     onBackgroundUpdate?: (data: Wallpaper[]) => void
 ): Promise<Wallpaper[]> => {
-    let endpoint = `/walls?page=${page}&limit=${limit}`;
+    let endpoint = `/walls/${categoryId}?&page=${page}&limit=${limit}`;
     if (categoryId && categoryId !== 'All') {
         endpoint += `&categoryId=${categoryId}`;
     }
 
     const result = await apiRequest<Wallpaper[]>(endpoint);
-    
+
     if (result.success) {
         const wallpapers = result.data.map((wp: any) => ({
             ...wp,
@@ -54,6 +54,6 @@ export const fetchWallpapersByCategory = async (
 
         return wallpapers;
     }
-    
+
     throw new Error(result.message || 'Failed to fetch wallpapers');
 };

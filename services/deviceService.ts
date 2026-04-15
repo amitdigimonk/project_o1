@@ -29,8 +29,13 @@ export const registerDevice = async (data: Partial<DeviceData> = {}) => {
 
     console.log('[DeviceService] Registering device:', payload.deviceId);
 
-    return await apiRequest('/devices/register', {
+    let res = await apiRequest('/devices/register', {
         method: 'POST',
         body: payload,
     });
+
+    console.log("this i sresponse ", res);
+
+    return res;
+
 };
