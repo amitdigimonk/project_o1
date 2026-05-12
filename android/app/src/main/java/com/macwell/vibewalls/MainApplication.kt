@@ -1,4 +1,4 @@
-package com.tossstudio
+package com.macwell.vibewalls
 
 import android.app.Application
 import android.content.res.Configuration

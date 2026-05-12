@@ -30,10 +30,10 @@ export const fetchWallpapersByCategory = async (
     limit = 20,
     onBackgroundUpdate?: (data: Wallpaper[]) => void
 ): Promise<Wallpaper[]> => {
-    let endpoint = `/walls/${categoryId}?&page=${page}&limit=${limit}`;
-    if (categoryId && categoryId !== 'All') {
-        endpoint += `&categoryId=${categoryId}`;
-    }
+    const hasCategory = categoryId && categoryId !== 'All';
+    const endpoint = hasCategory
+        ? `/walls?page=${page}&limit=${limit}&categoryId=${categoryId}`
+        : `/walls?page=${page}&limit=${limit}`;
 
     const result = await apiRequest<Wallpaper[]>(endpoint);
 

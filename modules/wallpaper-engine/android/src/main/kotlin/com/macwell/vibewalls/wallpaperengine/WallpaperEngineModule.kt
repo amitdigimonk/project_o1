@@ -1,4 +1,4 @@
-package com.tossstudio.wallpaperengine
+package com.macwell.vibewalls.wallpaperengine
 
 import android.app.WallpaperManager
 import android.content.ComponentName
@@ -13,7 +13,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.net.HttpURLConnection
 import java.net.URL
-import com.tossstudio.HtmlWallpaperService
+import com.macwell.vibewalls.HtmlWallpaperService
 
 class WallpaperEngineModule : Module() {
   override fun definition() = ModuleDefinition {
@@ -101,7 +101,7 @@ class WallpaperEngineModule : Module() {
         
         // Use the explicit service class name to avoid package name mismatch issues
         // with implicit relative paths.
-        val serviceClass = "com.tossstudio.HtmlWallpaperService"
+        val serviceClass = "com.macwell.vibewalls.HtmlWallpaperService"
         val componentName = ComponentName(pkgName, serviceClass)
 
         intent.putExtra(WallpaperManager.EXTRA_LIVE_WALLPAPER_COMPONENT, componentName)

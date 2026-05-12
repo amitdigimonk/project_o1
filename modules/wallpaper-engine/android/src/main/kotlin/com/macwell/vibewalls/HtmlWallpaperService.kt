@@ -1,4 +1,4 @@
-package com.tossstudio
+package com.macwell.vibewalls
 
 import android.annotation.SuppressLint
 import android.app.Presentation

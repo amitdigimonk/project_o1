@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-  namespace "com.tossstudio.wallpaperengine"
+  namespace "com.macwell.vibewalls.wallpaperengine"
   defaultConfig {
     versionCode 1
     versionName "1.0.0"

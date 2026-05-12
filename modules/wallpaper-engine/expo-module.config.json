@@ -10,7 +10,7 @@
   },
   "android": {
     "modules": [
-      "com.tossstudio.wallpaperengine.WallpaperEngineModule"
+      "com.macwell.vibewalls.wallpaperengine.WallpaperEngineModule"
     ]
   }
 }

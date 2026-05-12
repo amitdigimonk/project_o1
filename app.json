@@ -21,7 +21,7 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.tossstudio",
+      "package": "com.macwell.vibewalls",
       "permissions": [
         "SET_WALLPAPER",
         "android.permission.INTERNET",
