@@ -34,7 +34,7 @@ export async function setInteractiveWallpaper(serviceName: string = 'HtmlWallpap
  * Saves the absolute file:// URL of the unzipped index.html into
  * SharedPreferences so HtmlWallpaperService reads it on start / restart.
  *
- * @param path - e.g. "file:///data/user/0/com.tossstudio/files/wallpaper/index.html"
+ * @param path - e.g. "file:///data/user/0/com.macwell.vibewalls/files/wallpaper/index.html"
  * @returns true on success, false on error
  */
 export async function saveHtmlWallpaperPath(path: string): Promise<boolean> {

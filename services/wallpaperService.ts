@@ -1,27 +1,17 @@
-import { apiRequest, getImageUrl } from './api';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { MOCK_WALLPAPERS } from './mockData';
 import { Wallpaper } from '@/types';
 
-const CACHE_KEY_PREFIX = 'wallpapers_cache_';
+const mapWallpaper = (wp: any): Wallpaper => ({
+    ...wp,
+    image: wp.image || wp.url,
+    thumbnail: wp.thumbnail || wp.image || wp.url,
+});
 
 export const getCachedWallpapers = async (categoryId?: string): Promise<Wallpaper[] | null> => {
-    try {
-        const cacheKey = `${CACHE_KEY_PREFIX}${categoryId || 'all'}`;
-        const cachedData = await AsyncStorage.getItem(cacheKey);
-        return cachedData ? JSON.parse(cachedData) : null;
-    } catch (e) {
-        console.error('Failed to load cached wallpapers:', e);
-        return null;
-    }
-};
-
-const saveWallpapersToCache = async (categoryId: string | undefined, data: Wallpaper[]) => {
-    try {
-        const cacheKey = `${CACHE_KEY_PREFIX}${categoryId || 'all'}`;
-        await AsyncStorage.setItem(cacheKey, JSON.stringify(data));
-    } catch (e) {
-        console.error('Failed to save wallpapers to cache:', e);
-    }
+    const filtered = categoryId && categoryId !== 'All'
+        ? MOCK_WALLPAPERS.filter((wp: any) => wp.category?.id === categoryId)
+        : MOCK_WALLPAPERS;
+    return filtered.map(mapWallpaper);
 };
 
 export const fetchWallpapersByCategory = async (
@@ -30,30 +20,16 @@ export const fetchWallpapersByCategory = async (
     limit = 20,
     onBackgroundUpdate?: (data: Wallpaper[]) => void
 ): Promise<Wallpaper[]> => {
-    const hasCategory = categoryId && categoryId !== 'All';
-    const endpoint = hasCategory
-        ? `/walls?page=${page}&limit=${limit}&categoryId=${categoryId}`
-        : `/walls?page=${page}&limit=${limit}`;
+    const filtered = categoryId && categoryId !== 'All'
+        ? MOCK_WALLPAPERS.filter((wp: any) => wp.category?.id === categoryId)
+        : MOCK_WALLPAPERS;
 
-    const result = await apiRequest<Wallpaper[]>(endpoint);
+    const start = (page - 1) * limit;
+    const result = filtered.slice(start, start + limit).map(mapWallpaper);
 
-    if (result.success) {
-        const wallpapers = result.data.map((wp: any) => ({
-            ...wp,
-            image: getImageUrl(wp.image),
-            thumbnail: wp.thumbnail ? getImageUrl(wp.thumbnail) : getImageUrl(wp.image),
-        }));
-
-        if (page === 1) {
-            saveWallpapersToCache(categoryId, wallpapers);
-        }
-
-        if (onBackgroundUpdate) {
-            onBackgroundUpdate(wallpapers);
-        }
-
-        return wallpapers;
+    if (onBackgroundUpdate) {
+        onBackgroundUpdate(result);
     }
 
-    throw new Error(result.message || 'Failed to fetch wallpapers');
+    return result;
 };
