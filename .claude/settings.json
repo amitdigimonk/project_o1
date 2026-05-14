@@ -5,7 +5,9 @@
       "Bash(curl -s \"https://invotax.b2cinfohosting.in/api/admin/walls/69df1e2c9a70364c87a231be?page=1&limit=20&categoryId=69df1e2c9a70364c87a231be\")",
       "Bash(curl -s \"https://invotax.b2cinfohosting.in/api/admin/walls?page=1&limit=20&categoryId=69df1e2c9a70364c87a231be\")",
       "Bash(./gradlew app:assembleDebug -x lint -x test --configure-on-demand --build-cache -PreactNativeDevServerPort=8081 -PreactNativeArchitectures=arm64-v8a)",
-      "Bash(./gradlew clean *)"
+      "Bash(./gradlew clean *)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(json.dumps\\(d.get\\('scripts',{}\\), indent=2\\)\\)\")",
+      "Bash(./gradlew assembleRelease)"
     ]
   }
 }

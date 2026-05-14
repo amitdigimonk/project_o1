@@ -21,12 +21,18 @@ import { ActivityIndicator, FlatList, InteractionManager, Platform, RefreshContr
 
 const styles = StyleSheet.create({
     headerContainer: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 10,
         paddingTop: 56,
         paddingBottom: 8,
         paddingHorizontal: 20,
         flexDirection: 'row',
         alignItems: 'center',
         gap: 10,
+        backgroundColor: 'transparent',
     },
     backBtn: {
         padding: 4,
@@ -55,6 +61,7 @@ const styles = StyleSheet.create({
     },
     listContainer: {
         padding: 2,
+        paddingTop: 110,
         paddingBottom: 40,
     },
     errorContainer: {
@@ -242,60 +249,56 @@ export default function PreviewScreen() {
                 <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
                     <Ionicons name="chevron-back" size={20} color={colors.text} />
                 </TouchableOpacity>
-                <CustomText style={[styles.headerTitle, { color: colors.text }]}>
-                    {isBrowseAll ? t('preview.discover') : initialCategory}
-                </CustomText>
+                {!isBrowseAll && (
+                    <CustomText style={[styles.headerTitle, { color: colors.text }]}>
+                        {initialCategory}
+                    </CustomText>
+                )}
+                {isBrowseAll && (
+                    <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={styles.filterScroll}
+                        style={{ flex: 1 }}
+                    >
+                        {(() => {
+                            const isAllActive = !selectedCategoryId || selectedCategoryId === 'All';
+                            return (
+                                <TouchableOpacity style={styles.filterItem} onPress={() => setSelectedCategoryId(undefined)}>
+                                    <CustomText
+                                        variant="body"
+                                        color={isAllActive ? colors.text : colors.textMuted}
+                                        style={{ fontSize: 13, fontWeight: isAllActive ? '700' : '400' }}
+                                    >
+                                        {t('preview.filters.All')}
+                                    </CustomText>
+                                </TouchableOpacity>
+                            );
+                        })()}
+
+                        {categories.map((cat) => {
+                            const isActive = selectedCategoryId === cat.id;
+                            return (
+                                <TouchableOpacity
+                                    key={cat.id}
+                                    style={styles.filterItem}
+                                    onPress={() => {
+                                        setSelectedCategoryId(cat.id);
+                                    }}
+                                >
+                                    <CustomText
+                                        variant="body"
+                                        color={isActive ? colors.text : colors.textMuted}
+                                        style={{ fontSize: 13, fontWeight: isActive ? '700' : '400' }}
+                                    >
+                                        {typeof cat.name === 'string' ? cat.name : t(`categories.${cat.title}`)}
+                                    </CustomText>
+                                </TouchableOpacity>
+                            );
+                        })}
+                    </ScrollView>
+                )}
             </View>
-
-            {isBrowseAll && (
-                <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.filterScroll}
-                    style={{ flexGrow: 0 }}
-                >
-                    {/* "All" Filter */}
-                    {(() => {
-                        const isAllActive = !selectedCategoryId || selectedCategoryId === 'All';
-                        return (
-                            <TouchableOpacity style={styles.filterItem} onPress={() => setSelectedCategoryId(undefined)}>
-                                <CustomText
-                                    variant="body"
-                                    color={isAllActive ? colors.text : colors.textMuted}
-                                    style={{ fontSize: 13, fontWeight: isAllActive ? '700' : '400' }}
-                                >
-                                    {t('preview.filters.All')}
-                                </CustomText>
-                                {isAllActive && <View style={[styles.filterDot, { backgroundColor: colors.primary }]} />}
-                            </TouchableOpacity>
-                        );
-                    })()}
-
-                    {/* Dynamic Categories */}
-                    {categories.map((cat) => {
-                        const isActive = selectedCategoryId === cat.id;
-                        return (
-                            <TouchableOpacity
-                                key={cat.id}
-                                style={styles.filterItem}
-                                onPress={() => {
-                                    // Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); // Removed per user request
-                                    setSelectedCategoryId(cat.id);
-                                }}
-                            >
-                                <CustomText
-                                    variant="body"
-                                    color={isActive ? colors.text : colors.textMuted}
-                                    style={{ fontSize: 13, fontWeight: isActive ? '700' : '400' }}
-                                >
-                                    {typeof cat.name === 'string' ? cat.name : t(`categories.${cat.title}`)}
-                                </CustomText>
-                                {isActive && <View style={[styles.filterDot, { backgroundColor: colors.primary }]} />}
-                            </TouchableOpacity>
-                        );
-                    })}
-                </ScrollView>
-            )}
 
             {isLoading ? (
                 <WallpaperGridSkeleton />

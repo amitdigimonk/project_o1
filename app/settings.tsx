@@ -119,19 +119,21 @@ export default function SettingsScreen() {
         icon,
         label,
         onPress,
-        value
+        value,
+        iconBg = '#8E8E93',
     }: {
         icon: keyof typeof Ionicons.glyphMap;
         label: string;
         onPress?: () => void;
         value?: string;
+        iconBg?: string;
     }) => (
         <TouchableOpacity
             style={[styles.item, { borderBottomColor: colors.border }]}
             onPress={onPress}
             activeOpacity={0.5}
         >
-            <Ionicons name={icon} size={18} color={colors.textMuted} style={{ marginRight: 14 }} />
+            <Ionicons name={icon} size={20} color={iconBg} style={{ marginRight: 14 }} />
             <CustomText variant="body" style={styles.label}>{label}</CustomText>
             {value && <CustomText style={{ color: colors.textMuted, fontSize: 13 }}>{value}</CustomText>}
         </TouchableOpacity>
@@ -154,12 +156,14 @@ export default function SettingsScreen() {
                         label={t('settings.lockScreenPack')}
                         value={lockScreenCategories.length > 0 ? `${lockScreenCategories.length}/5` : ''}
                         onPress={() => setFeatureModalVisible(true)}
+                        iconBg="#A29BFE"
                     />
                     <SettingItem
                         icon={eventsEnabled ? "calendar" : "calendar-outline"}
                         label={t('settings.events')}
                         value={eventsEnabled ? t('settings.enabled') : t('settings.disabled')}
                         onPress={() => setEventsEnabled(!eventsEnabled)}
+                        iconBg="#FDCB6E"
                     />
                 </View>
 
@@ -174,6 +178,7 @@ export default function SettingsScreen() {
                             const nextIndex = (modes.indexOf(themeMode) + 1) % modes.length;
                             setThemeMode(modes[nextIndex]);
                         }}
+                        iconBg="#74B9FF"
                     />
                     <SettingItem
                         icon={notificationsEnabled ? "notifications" : "notifications-off-outline"}
@@ -183,12 +188,14 @@ export default function SettingsScreen() {
                             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                             setNotificationsEnabled(!notificationsEnabled);
                         }}
+                        iconBg="#FF7675"
                     />
                     <SettingItem
                         icon="language-outline"
                         label={t('settings.language')}
                         value={currentLanguageLabel}
                         onPress={() => setLanguageModalVisible(true)}
+                        iconBg="#55EFC4"
                     />
                 </View>
 
@@ -198,24 +205,27 @@ export default function SettingsScreen() {
                         icon="bug-outline"
                         label={t('settings.reportBug')}
                         onPress={handleReportBug}
+                        iconBg="#FF7675"
                     />
                     <SettingItem
                         icon="bulb-outline"
                         label={t('settings.suggestFeature')}
                         onPress={handleSuggestFeature}
+                        iconBg="#F0B429"
                     />
                     <SettingItem
                         icon="help-circle-outline"
                         label={t('settings.faq')}
                         onPress={handleFAQ}
+                        iconBg="#74B9FF"
                     />
                 </View>
 
                 <View style={styles.section}>
                     <CustomText variant="caption" style={styles.sectionTitle}>{t('settings.about')}</CustomText>
-                    <SettingItem icon="information-circle-outline" label={t('settings.version')} value="1.0.0" />
-                    <SettingItem icon="star-outline" label={t('settings.rateApp')} />
-                    <SettingItem icon="mail-outline" label={t('settings.contactSupport')} />
+                    <SettingItem icon="information-circle-outline" label={t('settings.version')} value="1.0.0" iconBg="#B2BEC3" />
+                    <SettingItem icon="star-outline" label={t('settings.rateApp')} iconBg="#FDCB6E" />
+                    <SettingItem icon="mail-outline" label={t('settings.contactSupport')} iconBg="#81ECEC" />
                 </View>
 
                 {/* <View style={[styles.footer, { marginTop: 40 }]}>
@@ -365,10 +375,10 @@ const styles = StyleSheet.create({
     item: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: 14,
+        paddingVertical: 12,
         borderBottomWidth: StyleSheet.hairlineWidth,
     },
-    label: {
+label: {
         flex: 1,
         fontWeight: '400',
     },
